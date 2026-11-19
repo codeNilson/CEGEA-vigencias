@@ -1,6 +1,8 @@
 # Changelog
 
-Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Cada versão corresponde a uma revisão de `docs/requisitos.md`.
+Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Cada versão corresponde a uma revisão de `docs/requisitos.md`. As notas são o que aparece para o setor em "O que há de novo". Mudanças já na `main` e ainda não publicadas ficam em `[Não publicado]`.
+
+## [Não publicado]
 
 ## [1.5.0] - 2026-11-19 (revisão 6)
 

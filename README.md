@@ -80,17 +80,25 @@ npm run build      # gera dist/Vigencias.html, arquivo único sem dependências 
 npm run preview    # serve o build para conferência
 ```
 
-### Publicar uma versão
+### Fluxo de trabalho
 
-1. Registre as mudanças em `CHANGELOG.md`, numa seção `## [X.Y.Z] - AAAA-MM-DD`. Os itens dessa seção são as notas que os usuários veem.
-2. Atualize `version` no `package.json` para `X.Y.Z`.
-3. Faça commit, crie a tag e envie:
-   ```
-   git tag vX.Y.Z
-   git push origin main vX.Y.Z
-   ```
+As alterações são feitas com o Claude Code, seguindo o [`CLAUDE.md`](CLAUDE.md). Alterar e publicar são etapas separadas:
 
-O workflow **Publicar versão** roda testes e build, recusa a tag se não bater com o `package.json` ou se faltar a seção no CHANGELOG, atualiza a branch `publicacao` (de onde o sistema lê) e cria a Release. Em até 6 horas, ou ao reabrir, os computadores do setor veem a versão nova. Para voltar atrás, publique uma versão nova com o código anterior.
+```
+pedido de alteração ─▶ branch claude/<assunto> ─▶ PR (CI) ─▶ aprovação ─▶ main
+                                                                         │
+                       CHANGELOG: item em [Não publicado]  ◀─────────────┘
+                                                                         │
+"publica" ─▶ versão X.Y.Z no CHANGELOG e package.json ─▶ tag vX.Y.Z ─▶ setor atualiza
+```
+
+- **`main`**: sempre funcionando, acumula mudanças ainda não publicadas. Juntar na `main` não muda nada para o setor.
+- **`claude/<assunto>`**: uma branch e um PR por pedido. O CI roda no PR; a mudança só entra na `main` com aprovação.
+- **`CHANGELOG.md`**: a cada mudança visível, o Claude escreve o item na seção `[Não publicado]`, em linguagem para quem usa o sistema.
+- **Publicar**: quando quiser lançar o que acumulou, peça "publica". O Claude escolhe o número (correção 1.5.**1**, novidade 1.**6**.0), fecha a seção do CHANGELOG, atualiza o `package.json` e cria a tag `vX.Y.Z`. O workflow **Publicar versão** roda testes e build, confere a tag, atualiza a branch `publicacao` (de onde o sistema lê) e cria a Release. Os computadores do setor veem a versão nova ao abrir ou em até 6 horas.
+- **Voltar atrás**: publique uma versão nova com o código anterior.
+
+Os builds da `main` (artefato do CI) servem para conferência; para a pasta de rede, use só versões publicadas.
 
 O `index.html` da raiz é só o modelo de desenvolvimento e não funciona aberto direto.
 
