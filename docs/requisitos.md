@@ -7,7 +7,7 @@ Revisão 3 (18/11/2026): modo lista no Início e no visor, contato das empresas,
 Revisão 4 (19/11/2026): data de início da vigência deixou de ser obrigatória no cadastro da ARP.
 Revisão 5 (19/11/2026): reequilíbrio na ARP, máscara de valores, ordenação escolhível, objeto da ARP em maiúsculas, busca e paginação de empresas, escolha de empresa com busca e aviso de empresa repetida.
 Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas de versão e proteção contra versão antiga aberta.
-Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos. Paginação e filtro por empresa nas listas de ARPs, contratos e OF/OS. Busca, filtros e paginação nas telas da ARP e do contrato.
+Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos. Paginação e filtro por empresa nas listas de ARPs, contratos e OF/OS. Busca, filtros e paginação nas telas da ARP e do contrato. Limite de cartões no Início.
 
 ## 1. Objetivo
 
@@ -183,6 +183,7 @@ Prazo (o alerta, separado da situação): um documento vigente com dias restante
 - CA13.4: Vencidos não aparecem nos contadores nem na lista de vencimentos (ver RF18).
 - CA13.5: Telas de lista de ARPs e de contratos com filtros: situação (vigente, vencendo em 90 dias, vencida, encerrado), tipo de contrato e busca por número. Por padrão, mostram só os vigentes.
 - CA13.6: Clicar em qualquer documento abre seu detalhe.
+- CA13.7: No Início, cada mês mostra até 6 cartões de vencimento, com o botão "Mostrar mais N" para ver o resto daquele mês; o número no cabeçalho do mês continua sendo o total. A área de entregas mostra até 12 cartões, com "Mostrar todas as N entregas". Se sobrar só um, ele aparece direto, sem botão. O modo lista mostra 20 por página. Na impressão sai tudo.
 
 ### RF14. Exportação
 

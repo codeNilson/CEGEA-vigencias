@@ -1,7 +1,10 @@
-import { useMemo } from 'react';
-import { contadores, linhasDocumentos, ordensEmAlerta, vencimentosPorMes } from '../../estado/seletores';
+import { useMemo, useState } from 'react';
+import { contadores, limitar, linhasDocumentos, ordensEmAlerta, vencimentosPorMes } from '../../estado/seletores';
 import { formatarData, somarDias } from '../../dominio/datas';
-import { Prazo, Segmentado, cls } from '../componentes/base';
+import { Prazo, Segmentado, cls, useImprimindo } from '../componentes/base';
+
+/** Revisão 7: cartões de entrega antes do "Mostrar todas". */
+const ENTREGAS_INICIO = 12;
 import { MODOS, usePreferencia, type ModoVencimentos } from '../preferencias';
 import { CartaoOrdem, ListaVencimentos, VencimentosPorMes } from '../componentes/Vencimentos';
 import { irPara, useLoja } from '../contexto';
@@ -13,12 +16,15 @@ export function Inicio({ aoNovaAta, aoNovoContrato }: { aoNovaAta: () => void; a
   const hoje = useLoja((e) => e.hoje);
   const problemas = useLoja((e) => e.problemas);
   const [modo, setModo] = usePreferencia<ModoVencimentos>('inicio.modo', 'mes', MODOS);
+  const [todasEntregas, setTodasEntregas] = useState(false);
+  const imprimindo = useImprimindo();
 
   const linhas = useMemo(() => linhasDocumentos({ atas, contratos, empresas, hoje }), [atas, contratos, empresas, hoje]);
   const ordens = useMemo(() => ordensEmAlerta({ contratos, empresas, hoje }), [contratos, empresas, hoje]);
   const grupos = useMemo(() => vencimentosPorMes(linhas, hoje), [linhas, hoje]);
   const k = contadores(linhas, ordens);
   const aguardando = linhas.filter((l) => l.aguardandoEncerramento);
+  const entregas = limitar(ordens, ENTREGAS_INICIO, todasEntregas || imprimindo);
 
   if (atas.size === 0 && contratos.size === 0)
     return (
@@ -78,11 +84,20 @@ export function Inicio({ aoNovaAta, aoNovoContrato }: { aoNovaAta: () => void; a
           <div className="vazio">Nenhuma entrega próxima ou atrasada.</div>
         </div>
       ) : (
-        <div className="entregas">
-          {ordens.map((o) => (
-            <CartaoOrdem key={o.ordem.id} o={o} />
-          ))}
-        </div>
+        <>
+          <div className="entregas">
+            {entregas.visiveis.map((o) => (
+              <CartaoOrdem key={o.ordem.id} o={o} />
+            ))}
+          </div>
+          {(entregas.ocultos > 0 || (todasEntregas && ordens.length > ENTREGAS_INICIO + 1)) && (
+            <div className="mais-entregas nao-imprimir">
+              <button className="btn btn-mini" onClick={() => setTodasEntregas(!todasEntregas)}>
+                {todasEntregas ? 'Mostrar menos' : `Mostrar todas as ${ordens.length} entregas`}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {aguardando.length > 0 && (

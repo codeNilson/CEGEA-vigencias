@@ -15,6 +15,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 - Na tela da ARP, a tabela de itens ganhou busca por item ou fornecedor e filtro por fornecedor quando há muitos itens, e mostra 20 itens por página. Os contratos encerrados ficam recolhidos em "Mostrar encerrados".
 - Na tela do contrato, a tabela de itens ganhou busca quando há muitos itens, e itens e OF/OS mostram 20 por página. As OF/OS de vigências anteriores ficam recolhidas em "Mostrar de vigências anteriores".
 - O PDF das telas da ARP e do contrato continua saindo completo, sem filtros.
+- No Início, cada mês mostra até 6 vencimentos, com "Mostrar mais" para ver o resto, e a área de entregas mostra até 12 OF/OS, com "Mostrar todas". O modo lista mostra 20 por página.
 
 ## [1.5.0] - 2026-11-19 (revisão 6)
 

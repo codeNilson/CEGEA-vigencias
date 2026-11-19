@@ -258,6 +258,15 @@ export function filtrarOrdens(linhas: readonly LinhaOrdem[], f: { filtro: Filtro
   );
 }
 
+/**
+ * Início (revisão 7): mostra só os primeiros `limite` itens, a não ser que a pessoa tenha pedido
+ * para ver todos. Quando sobra só um, mostra direto (não vale um botão para um item).
+ */
+export function limitar<T>(lista: readonly T[], limite: number, todos: boolean): { visiveis: T[]; ocultos: number } {
+  if (todos || lista.length <= limite + 1) return { visiveis: [...lista], ocultos: 0 };
+  return { visiveis: lista.slice(0, limite), ocultos: lista.length - limite };
+}
+
 // ---------- Fichas da ARP e do contrato (revisão 7) ----------
 
 /** Itens do contrato que casam com a busca (descrição ou unidade). */

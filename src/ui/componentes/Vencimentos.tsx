@@ -1,25 +1,51 @@
+import { useState } from 'react';
 import { formatarData } from '../../dominio/datas';
-import type { GrupoMes, LinhaDoc, LinhaOrdem } from '../../estado/seletores';
+import { limitar, type GrupoMes, type LinhaDoc, type LinhaOrdem } from '../../estado/seletores';
 import { formatarQuantidade } from '../../dominio/numeros';
-import { Prazo, SituacaoOrdemTag, TagTipo, cls } from './base';
+import { Paginacao, Prazo, SituacaoOrdemTag, TagTipo, cls, useImprimindo, usePaginacao } from './base';
+
+/** Revisão 7: cartões por mês antes do "Mostrar mais". */
+export const CARTOES_POR_MES_INICIO = 6;
 import { irPara, useOrdemAberta } from '../contexto';
 
 /** Vencimentos dos próximos 90 dias em colunas por mês, cada cartão identificado sem clique (RF13.1). */
 export function VencimentosPorMes({ grupos }: { grupos: GrupoMes[] }) {
+  const [abertos, setAbertos] = useState<ReadonlySet<string>>(new Set());
+  const imprimindo = useImprimindo();
+  const alternar = (chave: string) => {
+    const n = new Set(abertos);
+    if (n.has(chave)) n.delete(chave);
+    else n.add(chave);
+    setAbertos(n);
+  };
   return (
     <div className="meses" style={{ ['--n' as string]: grupos.length }}>
-      {grupos.map((g) => (
-        <section className="mes" key={g.chave}>
-          <div className="mes-cab">
-            <strong>{g.mes}</strong>
-            <span>{g.ano}</span>
-            <em>{g.itens.length}</em>
-          </div>
-          <div className="mes-corpo">
-            {g.itens.length === 0 ? <div className="mes-vazio">Nenhum vencimento</div> : g.itens.map((l) => <CartaoDoc key={l.id} l={l} />)}
-          </div>
-        </section>
-      ))}
+      {grupos.map((g) => {
+        const aberto = abertos.has(g.chave);
+        const { visiveis, ocultos } = limitar(g.itens, CARTOES_POR_MES_INICIO, aberto || imprimindo);
+        return (
+          <section className="mes" key={g.chave}>
+            <div className="mes-cab">
+              <strong>{g.mes}</strong>
+              <span>{g.ano}</span>
+              <em>{g.itens.length}</em>
+            </div>
+            <div className="mes-corpo">
+              {g.itens.length === 0 ? <div className="mes-vazio">Nenhum vencimento</div> : visiveis.map((l) => <CartaoDoc key={l.id} l={l} />)}
+              {ocultos > 0 && (
+                <button className="btn btn-mini mais-cartoes nao-imprimir" onClick={() => alternar(g.chave)}>
+                  Mostrar mais {ocultos}
+                </button>
+              )}
+              {aberto && g.itens.length > CARTOES_POR_MES_INICIO + 1 && (
+                <button className="btn btn-leve btn-mini mais-cartoes nao-imprimir" onClick={() => alternar(g.chave)}>
+                  Mostrar menos
+                </button>
+              )}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -77,6 +103,7 @@ export function CartaoOrdem({ o }: { o: LinhaOrdem }) {
 
 /** Modo lista: os mesmos vencimentos em uma tabela ordenada por data. */
 export function ListaVencimentos({ linhas }: { linhas: LinhaDoc[] }) {
+  const { itens, paginacao } = usePaginacao(linhas, 20);
   if (!linhas.length)
     return (
       <div className="tabela-caixa">
@@ -97,7 +124,7 @@ export function ListaVencimentos({ linhas }: { linhas: LinhaDoc[] }) {
           </tr>
         </thead>
         <tbody>
-          {linhas.map((l) => (
+          {itens.map((l) => (
             <tr key={l.id} className="clicavel" onClick={() => irPara({ tela: l.tipo, id: l.id })}>
               <td><TagTipo tipo={l.tipo} /></td>
               <td className="doc-numero">{l.numero}</td>
@@ -109,6 +136,7 @@ export function ListaVencimentos({ linhas }: { linhas: LinhaDoc[] }) {
           ))}
         </tbody>
       </table>
+      <Paginacao {...paginacao} soComVariasPaginas />
     </div>
   );
 }

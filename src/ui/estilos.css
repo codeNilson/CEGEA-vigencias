@@ -559,5 +559,9 @@ html.modo-visor, html.modo-visor body { background: var(--petroleo); overflow: h
 .lancamento-oculto { margin: 6px 0 0; color: var(--laranja-escuro); font-weight: 600; }
 @media print { .lancamento-rolagem { max-height: none; overflow: visible; } }
 
+/* Revisão 7: limites no Início */
+.mes-corpo .mais-cartoes { align-self: center; }
+.mais-entregas { display: flex; justify-content: center; margin-top: 12px; }
+
 /* Revisão 7: filtro por empresa nas listas */
 .filtros .filtro-empresa { flex: 0 1 250px; min-width: 200px; }
