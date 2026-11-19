@@ -4,7 +4,6 @@ import { formatarData } from '../../dominio/datas';
 import { atualizacao, ofereceAtualizacao, useAtualizacao } from '../../atualizacao/estado';
 import { instalarPublicacao, nomeArquivoAtual, podeInstalar, PASTA_VERSOES_ANTERIORES, type EtapaInstalacao } from '../../atualizacao/instalar';
 import { lerChangelog, notasEntre, type NotaVersao } from '../../atualizacao/notas';
-import { PAGINA_VERSOES } from '../../atualizacao/online';
 import { compararVersoes, VERSAO_APP, versaoValida } from '../../atualizacao/versao';
 import { Erros, Modal } from './base';
 import { loja, useLoja } from '../contexto';
@@ -166,7 +165,7 @@ export function ModalAtualizacao() {
   if (versaoNaPasta) status = <p>Outra pessoa já instalou a versão {versaoNaPasta}. Recarregue a página para usá-la.</p>;
   else if (nova) status = null;
   else if (consultando) status = <p className="fraco">Consultando…</p>;
-  else if (falhou && !ultima) status = <p>Não foi possível consultar agora (sem internet ou GitHub fora do ar). O sistema funciona normalmente; a consulta é repetida mais tarde.</p>;
+  else if (falhou && !ultima) status = <p>Não foi possível verificar atualizações agora. O sistema funciona normalmente e tenta de novo mais tarde.</p>;
   else if (publicacao) status = <p>Você está na versão mais recente.</p>;
   else status = <p className="fraco">Ainda não consultado.</p>;
 
@@ -177,7 +176,6 @@ export function ModalAtualizacao() {
       largo={!!nova}
       rodape={
         <>
-          <a className="btn btn-leve btn-mini" href={PAGINA_VERSOES} target="_blank" rel="noreferrer">Todas as versões</a>
           <span style={{ flex: 1 }} />
           {versaoNaPasta ? (
             <button className="btn btn-primario" onClick={() => location.reload()}>Recarregar</button>
