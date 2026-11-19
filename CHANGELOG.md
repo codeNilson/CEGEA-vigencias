@@ -7,7 +7,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 ## [1.5.0] - 2026-11-19 (revisão 6)
 
 ### Adicionado
-- Atualização pelo próprio sistema: ao abrir, ele consulta se há versão nova publicada no GitHub, mostra as novidades e instala com um clique, para todos de uma vez. Sem internet, segue funcionando e tenta de novo depois.
+- Atualização pelo próprio sistema: ao abrir, ele verifica se há versão nova, mostra as novidades e instala com um clique, para todos de uma vez. Sem internet, segue funcionando e tenta de novo depois.
 - Antes de instalar, o arquivo baixado é conferido (tamanho e assinatura SHA-256) e uma cópia da versão atual fica na pasta `versoes-anteriores`.
 - Janela "O que há de novo" na primeira abertura depois de cada atualização.
 - Versão do sistema na faixa de status, com consulta manual de atualizações.

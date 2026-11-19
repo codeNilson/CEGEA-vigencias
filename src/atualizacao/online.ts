@@ -8,7 +8,6 @@ import type { NotaVersao } from './notas';
  * então o HTML aberto por file:// consegue ler sem senha.
  */
 export const FONTE_ATUALIZACAO = 'https://raw.githubusercontent.com/codeNilson/CEGEA-vigencias/publicacao/';
-export const PAGINA_VERSOES = 'https://github.com/codeNilson/CEGEA-vigencias/releases';
 
 const NotaSchema = z.object({
   versao: z.string(),
