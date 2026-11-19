@@ -1,0 +1,125 @@
+{
+  "versao": "1.5.0",
+  "data": "2026-11-19",
+  "arquivo": "versoes/Vigencias-1.5.0.html",
+  "sha256": "ef3489fcf135b7a339fc6f273faa5dd963874e78ea13d0bfca8567af236bfb46",
+  "tamanho": 738578,
+  "notas": [
+    {
+      "versao": "1.5.0",
+      "data": "2026-11-19",
+      "rotulo": "(revisão 6)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Atualização pelo próprio sistema: ao abrir, ele verifica se há versão nova, mostra as novidades e instala com um clique, para todos de uma vez. Sem internet, segue funcionando e tenta de novo depois.",
+            "Antes de instalar, o arquivo baixado é conferido (tamanho e assinatura SHA-256) e uma cópia da versão atual fica na pasta `versoes-anteriores`.",
+            "Janela \"O que há de novo\" na primeira abertura depois de cada atualização.",
+            "Versão do sistema na faixa de status, com consulta manual de atualizações."
+          ]
+        },
+        {
+          "titulo": "Alterado",
+          "itens": [
+            "Quem estiver com uma versão antiga aberta recebe um aviso para recarregar e não consegue salvar até recarregar. Isso evita que a versão antiga apague campos novos dos registros.",
+            "O visor da TV recarrega sozinho quando o sistema é atualizado."
+          ]
+        }
+      ]
+    },
+    {
+      "versao": "1.4.0",
+      "data": "2026-11-19",
+      "rotulo": "(revisão 5)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Reequilíbrio econômico-financeiro como tipo de aditivo da ARP, com início dos efeitos e novo valor por fornecedor. Vale para contratos novos; contratos existentes mantêm o valor e mostram um aviso.",
+            "Ordenação escolhível nas listas de ARPs e contratos: por vencimento (padrão) ou por número (NÚMERO/ANO, mais recentes primeiro).",
+            "Busca e paginação (20 por página) na aba Empresas.",
+            "Campo de escolha de empresa com busca por nome ou CNPJ, no lugar da lista suspensa.",
+            "Aviso de empresa já cadastrada com nome parecido, com \"Usar esta\" e \"É outra empresa\".",
+            "Conferência dos dígitos verificadores do CNPJ e formatação automática.",
+            "Máscara nos campos de valor em R$ (500 vira 5,00) e separador de milhar nas quantidades."
+          ]
+        },
+        {
+          "titulo": "Alterado",
+          "itens": [
+            "\"Tema\" da ARP passa a se chamar \"Objeto\" e é exibido em maiúsculas.",
+            "Exportações trazem valor unitário original e atual dos itens das ARPs."
+          ]
+        }
+      ]
+    },
+    {
+      "versao": "1.3.0",
+      "data": "2026-11-19",
+      "rotulo": "(revisão 4)",
+      "secoes": [
+        {
+          "titulo": "Alterado",
+          "itens": [
+            "Data de início da vigência deixou de ser pedida no cadastro da ARP. ARPs antigas mantêm a data gravada."
+          ]
+        }
+      ]
+    },
+    {
+      "versao": "1.2.0",
+      "data": "2026-11-18",
+      "rotulo": "(revisão 3)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Modo lista no Início e no visor, além da visão por mês.",
+            "E-mail e telefone das empresas, exibidos na ficha do contrato e no detalhe da OF/OS.",
+            "Exportação completa dos dados em uma planilha com abas independentes."
+          ]
+        }
+      ]
+    },
+    {
+      "versao": "1.1.0",
+      "data": "2026-11-18",
+      "rotulo": "(revisão 2)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Visor para TV com atualização automática e paginação.",
+            "Painel lateral de detalhe da OF/OS, com itens e quantidades."
+          ]
+        },
+        {
+          "titulo": "Alterado",
+          "itens": [
+            "Situação (vigente, vencido, encerrado) separada do alerta de prazo.",
+            "\"SRP\" renomeado para \"ARP\". Nomes de colunas mais claros.",
+            "Vencidos fora da tela inicial; contratos vencidos ficam em seção recolhida até o encerramento.",
+            "Identidade visual da Prefeitura de Fortaleza."
+          ]
+        }
+      ]
+    },
+    {
+      "versao": "1.0.0",
+      "data": "2026-11-18",
+      "rotulo": "(revisão 1)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Cadastro de ARPs, itens, parcelas por fornecedor, contratos, aditivos e OF/OS.",
+            "Saldos da ARP e do contrato, prazos de entrega com dias úteis e feriados.",
+            "Edição concorrente segura na pasta de rede, com mesclagem em três vias e tela de conflito.",
+            "Exportação em planilha e PDF."
+          ]
+        }
+      ]
+    }
+  ]
+}
