@@ -1,10 +1,25 @@
 {
-  "versao": "1.6.0",
+  "versao": "1.7.0",
   "data": "2026-11-19",
-  "arquivo": "versoes/Vigencias-1.6.0.html",
-  "sha256": "32148b192045aad651b7968394277a2de7d22f042f808ffad4ae00f8c0caa7ec",
-  "tamanho": 756420,
+  "arquivo": "versoes/Vigencias-1.7.0.html",
+  "sha256": "b0eed29a6f4513e5e5973e18bb3f62618d6aa6f8c783a5f8a2847cb20556ffcc",
+  "tamanho": 760477,
   "notas": [
+    {
+      "versao": "1.7.0",
+      "data": "2026-11-19",
+      "rotulo": "(revisão 8)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Os aditivos da ARP e do contrato podem ser editados, inclusive o tipo, pelo botão \"Editar\" ao lado de cada aditivo.",
+            "Novo tipo de aditivo \"Errata\", para registrar correções do termo. Fica só no histórico: não muda vencimento, saldo nem valores.",
+            "Novo tipo de aditivo \"Outra alteração\", para o que não é prazo, quantidade, valor nem reequilíbrio, como a troca de um equipamento por outro. Também fica só no histórico. Um aditivo lançado antes como \"Prazo\" por falta de opção pode ser editado e trocado para \"Outra alteração\"."
+          ]
+        }
+      ]
+    },
     {
       "versao": "1.6.0",
       "data": "2026-11-19",
