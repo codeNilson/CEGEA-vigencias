@@ -23,10 +23,11 @@ import {
   textoQuantidade,
   textoValor,
 } from '../../dominio/numeros';
-import { ROTULO_ADITIVO_ATA, type AditivoAta, type Ata, type ItemAta, type Parcela } from '../../dominio/tipos';
+import { ROTULO_ADITIVO_ATA, ehSoRegistro, type AditivoAta, type Ata, type ItemAta, type Parcela } from '../../dominio/tipos';
 import { validarAditivoAta, validarAta } from '../../dominio/validacoes';
 import { aditivosDaParcela, dependentesDaAta, dependentesDaParcela, dependentesDoItemAta } from '../../dominio/dependencias';
 import { exportarAta } from '../../exportacao/planilha';
+import { NOTA_SO_REGISTRO, rotuloObservacoesAditivo } from '../textosAditivo';
 import {
   CabecalhoImpressao,
   Campo,
@@ -227,16 +228,24 @@ function FormItemAta({ ata, item, aoFechar }: { ata: Ata; item?: ItemAta; aoFech
   );
 }
 
-function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
+/** Novo aditivo ou, com `aditivo`, edição de um existente (revisão 8). */
+function FormAditivoAta({ ata: ataTela, aditivo, aoFechar }: { ata: Ata; aditivo?: AditivoAta; aoFechar: () => void }) {
   const empresas = useLoja((e) => e.empresas);
-  const [tipo, setTipo] = useState<AditivoAta['tipo']>('prazo');
-  const [identificacao, setIdentificacao] = useState('');
-  const [data, setData] = useState(hojeISO());
-  const [novaDataFim, setNovaDataFim] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [qtds, setQtds] = useState<Record<string, string>>({});
-  const [valores, setValores] = useState<Record<string, string>>({});
-  const [inicioEfeitos, setInicioEfeitos] = useState(hojeISO());
+  // Na edição, os valores "atuais" mostrados são os de antes deste aditivo.
+  const ata = aditivo ? { ...ataTela, aditivos: ataTela.aditivos.filter((a) => a.id !== aditivo.id) } : ataTela;
+  const [tipo, setTipo] = useState<AditivoAta['tipo']>(aditivo?.tipo ?? 'prazo');
+  const [identificacao, setIdentificacao] = useState(aditivo?.identificacao ?? '');
+  const [data, setData] = useState(aditivo?.data ?? hojeISO());
+  const [novaDataFim, setNovaDataFim] = useState(aditivo?.novaDataFim ?? '');
+  const [observacoes, setObservacoes] = useState(aditivo?.observacoes ?? '');
+  const [qtds, setQtds] = useState<Record<string, string>>(
+    Object.fromEntries(aditivo?.quantidades.map((q) => [q.parcelaId, textoQuantidade(q.novaQuantidade)]) ?? []),
+  );
+  const [valores, setValores] = useState<Record<string, string>>(
+    Object.fromEntries(aditivo?.valores.map((v) => [v.parcelaId, textoValor(v.novoValorUnitario)]) ?? []),
+  );
+  const [inicioEfeitos, setInicioEfeitos] = useState(aditivo?.inicioEfeitos || aditivo?.data || hojeISO());
+  const soRegistro = ehSoRegistro(tipo);
   const reeq = tipo === 'reequilibrio';
   const comPrazo = tipo === 'prazo' || tipo === 'prazo_quantidade';
   const comQtd = tipo === 'quantidade' || tipo === 'prazo_quantidade';
@@ -266,7 +275,7 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
   return (
     <ModalForm
       largo
-      titulo={`Novo aditivo da ARP ${ata.numero}`}
+      titulo={aditivo ? `Editar aditivo da ARP ${ata.numero}` : `Novo aditivo da ARP ${ata.numero}`}
       aoFechar={aoFechar}
       aoSalvar={async () => {
         const erros: string[] = [];
@@ -289,9 +298,10 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
               })
           : [];
         if (erros.length) return erros;
-        const atual = loja.getState().atas.get(ata.id) ?? ata;
+        const atual = loja.getState().atas.get(ata.id) ?? ataTela;
+        if (aditivo && !atual.aditivos.some((a) => a.id === aditivo.id)) return ['Este aditivo foi excluído por outro usuário.'];
         const ad: AditivoAta = {
-          id: novoId(),
+          id: aditivo?.id ?? novoId(),
           identificacao: identificacao.trim(),
           data,
           tipo,
@@ -303,6 +313,7 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
         };
         const e2 = validarAditivoAta(ad, atual);
         if (e2.length) return e2;
+        if (aditivo) return gravar({ ...atual, aditivos: atual.aditivos.map((a) => (a.id === ad.id ? ad : a)) }, validar, 'Aditivo alterado.');
         return gravar({ ...atual, aditivos: [...atual.aditivos, ad] }, validar, 'Aditivo registrado.');
       }}
     >
@@ -316,11 +327,18 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
               ['quantidade', 'Quantidade'],
               ['prazo_quantidade', 'Prazo e quantidade'],
               ['reequilibrio', 'Reequilíbrio econômico-financeiro'],
+              ['errata', 'Errata'],
+              ['outro', 'Outra alteração'],
             ]}
           />
         </Campo>
         <Campo rotulo="Identificação" className="span2">
-          <Entrada valor={identificacao} muda={setIdentificacao} placeholder={reeq ? '1º Termo de Reequilíbrio' : '1º Termo Aditivo'} autoFocus />
+          <Entrada
+            valor={identificacao}
+            muda={setIdentificacao}
+            placeholder={reeq ? '1º Termo de Reequilíbrio' : tipo === 'errata' ? 'Errata do 1º Termo Aditivo' : '1º Termo Aditivo'}
+            autoFocus
+          />
         </Campo>
         <Campo rotulo={reeq ? 'Data de assinatura' : 'Data'}>
           <EntradaData valor={data} muda={setData} />
@@ -393,7 +411,8 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
           />
         </>
       )}
-      <Campo rotulo="Observações">
+      {soRegistro && <p className="nota">{NOTA_SO_REGISTRO}</p>}
+      <Campo rotulo={rotuloObservacoesAditivo(tipo)}>
         <textarea className="entrada" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
       </Campo>
     </ModalForm>
@@ -408,6 +427,7 @@ export function AtaTela({ id }: { id: string }) {
   const contratosMapa = useLoja((e) => e.contratos);
   const hoje = useLoja((e) => e.hoje);
   const [modal, setModal] = useState<null | 'editar' | 'item' | 'aditivo' | 'contrato' | ItemAta>(null);
+  const [editandoAditivo, setEditandoAditivo] = useState<AditivoAta | null>(null);
   const { pedir, elemento } = useConfirmacao();
   // Revisão 7: busca e filtro por fornecedor nos itens, encerrados recolhidos e paginação. Na impressão, tudo.
   const [buscaItens, setBuscaItens] = useState('');
@@ -615,6 +635,7 @@ export function AtaTela({ id }: { id: string }) {
                 <strong>{ad.identificacao || 'Aditivo'}</strong>
                 <span className="tag">{ROTULO_ADITIVO_ATA[ad.tipo]}</span>
                 <span className="num pequeno fraco">{formatarData(ad.data)}</span>
+                <button className="btn btn-leve btn-mini nao-imprimir" onClick={() => setEditandoAditivo(ad)}>Editar</button>
                 <button className="btn btn-leve btn-mini nao-imprimir" onClick={() => excluirAditivo(ad)}>Excluir</button>
               </div>
               <div className="evento-corpo">
@@ -638,7 +659,7 @@ export function AtaTela({ id }: { id: string }) {
                     </div>
                   );
                 })}
-                {ad.observacoes && <div className="fraco">{ad.observacoes}</div>}
+                {ad.observacoes && <div className={cls('texto-aditivo', !ehSoRegistro(ad.tipo) && 'fraco')}>{ad.observacoes}</div>}
               </div>
             </div>
           ))}
@@ -648,6 +669,7 @@ export function AtaTela({ id }: { id: string }) {
       {modal === 'editar' && <FormAta ata={ata} aoFechar={() => setModal(null)} />}
       {modal === 'item' && <FormItemAta ata={ata} aoFechar={() => setModal(null)} />}
       {modal === 'aditivo' && <FormAditivoAta ata={ata} aoFechar={() => setModal(null)} />}
+      {editandoAditivo && <FormAditivoAta ata={ata} aditivo={editandoAditivo} aoFechar={() => setEditandoAditivo(null)} />}
       {modal === 'contrato' && <FormContrato ataInicial={ata.id} aoFechar={() => setModal(null)} />}
       {modal && typeof modal === 'object' && <FormItemAta ata={ata} item={modal} aoFechar={() => setModal(null)} />}
       {elemento}

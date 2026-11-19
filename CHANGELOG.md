@@ -4,6 +4,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ## [Não publicado]
 
+### Adicionado
+- Os aditivos da ARP e do contrato podem ser editados, inclusive o tipo, pelo botão "Editar" ao lado de cada aditivo.
+- Novo tipo de aditivo "Errata", para registrar correções do termo. Fica só no histórico: não muda vencimento, saldo nem valores.
+- Novo tipo de aditivo "Outra alteração", para o que não é prazo, quantidade, valor nem reequilíbrio, como a troca de um equipamento por outro. Também fica só no histórico. Um aditivo lançado antes como "Prazo" por falta de opção pode ser editado e trocado para "Outra alteração".
+
 ## [1.6.0] - 2026-11-19 (revisão 7)
 
 ### Adicionado

@@ -8,6 +8,7 @@ Revisão 4 (19/11/2026): data de início da vigência deixou de ser obrigatória
 Revisão 5 (19/11/2026): reequilíbrio na ARP, máscara de valores, ordenação escolhível, objeto da ARP em maiúsculas, busca e paginação de empresas, escolha de empresa com busca e aviso de empresa repetida.
 Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas de versão e proteção contra versão antiga aberta.
 Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos. Paginação e filtro por empresa nas listas de ARPs, contratos e OF/OS. Busca, filtros e paginação nas telas da ARP e do contrato. Limite de cartões no Início.
+Revisão 8 (19/11/2026): edição de aditivos da ARP e do contrato. Novos tipos de aditivo "Errata" e "Outra alteração", que só ficam registrados.
 
 ## 1. Objetivo
 
@@ -22,7 +23,7 @@ Evitar a perda de prazo de renovação de atas de registro de preço e contratos
 | Parcela | Fatia de um item da ata atribuída a um fornecedor (ampla concorrência ou cota ME/EPP), com quantidade e valor unitário próprios. Um item tem uma ou mais parcelas. |
 | Contrato | Contrato com uma empresa, de material ou de serviço, vinculado a no máximo uma ata, ou a nenhuma. |
 | OF / OS | Ordem de Fornecimento (material) ou Ordem de Serviço (serviço). Consome saldo do contrato e tem prazo de entrega. |
-| Aditivo | Alteração formal de ata ou contrato (prazo, quantidade, valor, reequilíbrio). |
+| Aditivo | Alteração formal de ata ou contrato (prazo, quantidade, valor, reequilíbrio). Errata e "outra alteração" também são registradas como aditivo, só para histórico. |
 | Saldo | Quantidade ainda disponível para contratar (na ata) ou para emitir OF/OS (no contrato). |
 | Vencimento | Data fim original ou a do último aditivo de prazo. |
 | Vigência atual | Período desde o início do contrato, ou desde a última prorrogação. O saldo do contrato é contado nele. |
@@ -67,7 +68,7 @@ Item: descrição, unidade de medida. Parcela: fornecedor, tipo (ampla ou cota M
 
 ### RF04. Aditivo de ata
 
-Tipos: prazo, quantidade, prazo e quantidade, reequilíbrio econômico-financeiro. Campos: número/identificação, data, nova data fim (se prazo), novas quantidades por parcela (se quantidade), início dos efeitos e novos valores unitários por parcela (se reequilíbrio), observações.
+Tipos: prazo, quantidade, prazo e quantidade, reequilíbrio econômico-financeiro, errata, outra alteração. Campos: número/identificação, data, nova data fim (se prazo), novas quantidades por parcela (se quantidade), início dos efeitos e novos valores unitários por parcela (se reequilíbrio), observações (na errata, "O que a errata corrige"; em outra alteração, "O que o aditivo altera").
 
 - CA04.1: Após um aditivo de prazo, a data fim vigente da ata passa a ser a nova data fim, e a situação e o alerta são recalculados com ela.
 - CA04.2: Após um aditivo de quantidade, o saldo da parcela afetada é recalculado com a nova quantidade.
@@ -75,6 +76,8 @@ Tipos: prazo, quantidade, prazo e quantidade, reequilíbrio econômico-financeir
 - CA04.4 (reequilíbrio): A partir do início dos efeitos, o valor unitário registrado da parcela passa a ser o novo valor. A ficha mostra o valor em vigor e o original ("era R$ ...") e o valor registrado da ARP usa os valores em vigor.
 - CA04.5: O reequilíbrio da ARP vale só para contratos novos: um item de contrato vindo da ARP pega o valor em vigor na data de início do contrato. Contratos que já existiam mantêm o próprio valor e mostram o aviso "A ARP teve reequilíbrio a partir de dd/mm/aaaa"; se o contrato também mudar, registra-se o reequilíbrio no próprio contrato (RF08).
 - CA04.6: Uma parcela citada em reequilíbrio não pode ser removida do item enquanto o aditivo existir.
+- CA04.7: Um aditivo de ARP pode ser editado, inclusive o tipo. A janela abre com os dados gravados, e os valores "atuais" que ela mostra (vencimento, quantidade registrada, valor unitário) são os de antes desse aditivo. Ao salvar, vencimento, saldos e valores são recalculados.
+- CA04.8: Errata e outra alteração (por exemplo, troca de um equipamento por outro) só ficam no histórico de aditivos: exigem a descrição e não mudam vencimento, quantidade, saldo nem valor. Se a mudança alterar a descrição de um item, edita-se o item.
 
 ### RF05. Cadastro de contrato
 
@@ -110,7 +113,7 @@ Empresa: nome, CNPJ (opcional), e-mail (opcional, aceita mais de um separado por
 
 ### RF08. Aditivos de contrato
 
-Tipos: prazo, valor, reequilíbrio econômico-financeiro. Campos comuns: número/identificação, data de assinatura, data de início dos efeitos, observações.
+Tipos: prazo, valor, reequilíbrio econômico-financeiro, errata, outra alteração. Campos comuns: número/identificação, data de assinatura, data de início dos efeitos (exceto errata e outra alteração), observações.
 
 - CA08.1 (prazo): Informa a nova data fim. A data fim vigente passa a ser a nova data, e o saldo de cada item volta à quantidade do contrato, iniciando um novo período. OF/OS do período anterior continuam visíveis no histórico e não consomem o novo saldo.
 - CA08.2 (valor): Pode alterar a quantidade e/ou o valor unitário de itens, a partir da data de início dos efeitos.
@@ -118,6 +121,8 @@ Tipos: prazo, valor, reequilíbrio econômico-financeiro. Campos comuns: número
 - CA08.4: O contrato exibe o histórico de valores unitários de cada item, com a data a partir da qual cada valor vale.
 - CA08.5: OF/OS usa o valor unitário vigente na sua data de emissão. Exemplo: reequilíbrio de R$ 10,00 para R$ 12,00 a partir de 01/06; OF emitida em 15/05 é valorada a R$ 10,00 e OF emitida em 10/06 a R$ 12,00.
 - CA08.6: O contrato exibe o histórico de aditivos em ordem cronológica.
+- CA08.7: Um aditivo de contrato pode ser editado, inclusive o tipo, enquanto o contrato não estiver encerrado. A janela abre com os dados gravados, e os valores "atuais" que ela mostra são os de antes desse aditivo. Ao salvar, vencimento, vigência atual, saldos e valores são recalculados.
+- CA08.8: Errata e outra alteração só ficam no histórico, como no CA04.8: exigem a descrição, não pedem início dos efeitos e não mudam vencimento, vigência, quantidade, saldo nem valor.
 
 ### RF09. Encerramento de contrato
 

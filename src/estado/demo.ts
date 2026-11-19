@@ -88,6 +88,7 @@ export async function repositorioDemonstracao(opcoes: { grande?: boolean } = {})
     ],
     aditivos: [
       { id: 'demo-ad-el', identificacao: '1º Termo Aditivo', data: d(-200), tipo: 'quantidade', novaDataFim: null, quantidades: [{ parcelaId: 'demo-p-lampada', novaQuantidade: Q(2500) }], inicioEfeitos: '', valores: [], observacoes: 'Acréscimo de 25%' },
+      { id: 'demo-ad-el-errata', identificacao: 'Errata do 1º Termo Aditivo', data: d(-190), tipo: 'errata', novaDataFim: null, quantidades: [], inicioEfeitos: '', valores: [], observacoes: 'Onde se lê "Cláusula Terceira", leia-se "Cláusula Quarta".' },
     ],
   });
 
@@ -107,6 +108,7 @@ export async function repositorioDemonstracao(opcoes: { grande?: boolean } = {})
     ],
     aditivos: [
       { id: 'demo-ad-reeq', identificacao: '1º Apostilamento', tipo: 'reequilibrio', dataAssinatura: d(-100), inicioEfeitos: d(-95), novaDataFim: null, alteracoes: [{ itemId: 'demo-ci-papel', novaQuantidade: null, novoValorUnitario: V(26.3) }], observacoes: 'Reajuste do preço da celulose' },
+      { id: 'demo-ad-troca', identificacao: '2º Termo Aditivo', tipo: 'outro', dataAssinatura: d(-60), inicioEfeitos: d(-60), novaDataFim: null, alteracoes: [], observacoes: 'Substituição da caneta modelo X pelo modelo Y, descontinuado pelo fabricante, sem alteração de preço.' },
     ],
     ordens: [
       { id: 'demo-of-1', numero: 'OF 112/2026', dataEmissao: d(-250), prazoDias: 10, tipoPrazo: 'uteis', dataEntrega: d(-240), itens: [{ itemId: 'demo-ci-papel', quantidade: Q(150) }, { itemId: 'demo-ci-caneta', quantidade: Q(20) }], observacoes: '' },

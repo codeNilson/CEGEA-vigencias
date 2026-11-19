@@ -51,7 +51,8 @@ export const AditivoAtaSchema = z.object({
   identificacao: z.string(),
   data,
   // Revisão 5: 'reequilibrio' altera o valor unitário das parcelas a partir de `inicioEfeitos`.
-  tipo: z.enum(['prazo', 'quantidade', 'prazo_quantidade', 'reequilibrio']),
+  // Revisão 8: 'errata' e 'outro' são só registro (TIPOS_SO_REGISTRO): não entram em nenhum cálculo.
+  tipo: z.enum(['prazo', 'quantidade', 'prazo_quantidade', 'reequilibrio', 'errata', 'outro']),
   novaDataFim: data.nullable(),
   quantidades: z.array(z.object({ parcelaId: id, novaQuantidade: inteiroPositivo })),
   // Revisão 5. Defaults para ler aditivos gravados antes destes campos existirem.
@@ -65,7 +66,13 @@ export const ROTULO_ADITIVO_ATA: Record<z.infer<typeof AditivoAtaSchema>['tipo']
   quantidade: 'Quantidade',
   prazo_quantidade: 'Prazo e quantidade',
   reequilibrio: 'Reequilíbrio',
+  errata: 'Errata',
+  outro: 'Outra alteração',
 };
+
+/** Revisão 8: tipos de aditivo que só guardam informação. Não mudam vencimento, quantidade nem valor. */
+export const TIPOS_SO_REGISTRO = ['errata', 'outro'] as const;
+export const ehSoRegistro = (tipo: string) => (TIPOS_SO_REGISTRO as readonly string[]).includes(tipo);
 
 export const AtaSchema = z.object({
   ...meta,
@@ -93,7 +100,8 @@ export const ItemContratoSchema = z.object({
 export const AditivoContratoSchema = z.object({
   id,
   identificacao: z.string(),
-  tipo: z.enum(['prazo', 'valor', 'reequilibrio']),
+  // Revisão 8: 'errata' e 'outro' são só registro. Na errata, inicioEfeitos = dataAssinatura.
+  tipo: z.enum(['prazo', 'valor', 'reequilibrio', 'errata', 'outro']),
   dataAssinatura: data,
   inicioEfeitos: data,
   novaDataFim: data.nullable(),
@@ -106,6 +114,14 @@ export const AditivoContratoSchema = z.object({
   ),
   observacoes: z.string(),
 });
+
+export const ROTULO_ADITIVO_CONTRATO: Record<z.infer<typeof AditivoContratoSchema>['tipo'], string> = {
+  prazo: 'Prazo',
+  valor: 'Valor',
+  reequilibrio: 'Reequilíbrio',
+  errata: 'Errata',
+  outro: 'Outra alteração',
+};
 
 export const OrdemSchema = z.object({
   id,
