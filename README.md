@@ -95,7 +95,11 @@ pedido de alteração ─▶ branch claude/<assunto> ─▶ PR (CI) ─▶ aprov
 - **`main`**: sempre funcionando, acumula mudanças ainda não publicadas. Juntar na `main` não muda nada para o setor.
 - **`claude/<assunto>`**: uma branch e um PR por pedido. O CI roda no PR; a mudança só entra na `main` com aprovação.
 - **`CHANGELOG.md`**: a cada mudança visível, o Claude escreve o item na seção `[Não publicado]`, em linguagem para quem usa o sistema.
-- **Publicar**: quando quiser lançar o que acumulou, peça "publica". O Claude escolhe o número (correção 1.5.**1**, novidade 1.**6**.0), fecha a seção do CHANGELOG, atualiza o `package.json` e cria a tag `vX.Y.Z`. O workflow **Publicar versão** roda testes e build, confere a tag, atualiza a branch `publicacao` (de onde o sistema lê) e cria a Release. Os computadores do setor veem a versão nova ao abrir ou em até 6 horas.
+- **Publicar**: quando quiser lançar o que acumulou, peça "publica". O Claude escolhe o número (correção 1.5.**1**, novidade 1.**6**.0), fecha a seção do CHANGELOG e atualiza o `package.json` num PR. Depois de juntar, a publicação é disparada de um destes jeitos:
+  - o Claude cria a tag `vX.Y.Z`, quando o ambiente dele permite;
+  - ou você clica em **Actions → Publicar versão → Run workflow** (branch `main`). O GitHub lê a versão do `package.json` da `main`, cria a tag e publica. Se essa versão já foi publicada, ele recusa.
+
+  O workflow roda testes e build, confere versão e CHANGELOG, atualiza a branch `publicacao` (de onde o sistema lê) e cria a Release. Os computadores do setor veem a versão nova ao abrir ou em até 6 horas.
 - **Voltar atrás**: publique uma versão nova com o código anterior.
 
 Os builds da `main` (artefato do CI) servem para conferência; para a pasta de rede, use só versões publicadas.

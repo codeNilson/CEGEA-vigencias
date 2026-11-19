@@ -126,6 +126,7 @@ Pedido pequeno e sem risco, com o Denilson dizendo que pode ir direto: ainda ass
 4. Atualize `version` no `package.json` (e o `package-lock.json` com `npm install --package-lock-only`).
 5. PR, CI verde, junte na `main`.
 6. Na `main` atualizada: `git tag vX.Y.Z && git push origin vX.Y.Z`. O workflow "Publicar versão" faz o resto e recusa tag fora da `main`, sem seção no CHANGELOG ou diferente do `package.json`.
+   - Se o envio da tag for recusado (sessões na nuvem não podem criar tags; erro 403), não insista nem procure outro caminho. Peça ao Denilson para publicar pelo botão: GitHub, aba **Actions** → **Publicar versão** → **Run workflow** → branch `main` → **Run workflow**. O workflow lê a versão do `package.json` da `main`, cria a tag e publica; recusa se a versão já foi publicada.
 7. Confira com `gh run list` que a publicação passou e informe ao Denilson.
 
 Se `[Não publicado]` estiver vazio, não há o que publicar: avise em vez de criar versão.

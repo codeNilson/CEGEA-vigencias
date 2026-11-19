@@ -1,11 +1,17 @@
 name: Publicar versão
 
-# Ao enviar uma tag v1.2.3, publica a versão para o sistema se atualizar sozinho (revisão 6):
-# branch `publicacao` (versao.json + versoes/Vigencias-1.2.3.html, lidos via raw.githubusercontent.com)
+# Publica a versão para o sistema se atualizar sozinho (RF22, docs/design.md seção 10):
+# branch `publicacao` (versao.json + versoes/Vigencias-X.Y.Z.html, lidos via raw.githubusercontent.com)
 # e uma GitHub Release com as notas do CHANGELOG e o arquivo anexado.
+#
+# Dois jeitos de disparar, com o mesmo resultado:
+# - enviar a tag vX.Y.Z (o Claude faz, quando o ambiente permite);
+# - botão "Run workflow" na aba Actions, com a branch main: publica a versão do package.json
+#   da main, criando a tag. Recusa se essa versão já foi publicada.
 on:
   push:
     tags: ['v*.*.*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,10 +25,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Conferir que a tag está na main
+
+      - name: Definir versão
+        run: |
+          set -e
+          VERSAO=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+              echo "::error::Escolha a branch main ao clicar em Run workflow."; exit 1
+            fi
+            if git ls-remote --exit-code --tags origin "refs/tags/v${VERSAO}" >/dev/null; then
+              echo "::error::A versão ${VERSAO} já foi publicada. Peça ao Claude para preparar a próxima versão (número novo no package.json e no CHANGELOG) e junte na main antes de publicar."
+              exit 1
+            fi
+            TAG="v${VERSAO}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "VERSAO=${TAG#v}" >> "$GITHUB_ENV"
+          echo "Publicando ${TAG}"
+
+      - name: Conferir que o commit está na main
         run: |
           git fetch --depth 200 origin main
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "A tag ${GITHUB_REF_NAME} não aponta para um commit da main."; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::${TAG} não aponta para um commit da main."; exit 1; }
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -32,12 +60,18 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Montar publicação
-        run: npm run publicar -- "${GITHUB_REF_NAME}"
+        # Recusa se a tag não bater com o package.json ou se faltar a seção da versão no CHANGELOG.
+        run: npm run publicar -- "${TAG}"
+
+      - name: Criar a tag (só pelo botão)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag "${TAG}" "${GITHUB_SHA}"
+          git push origin "${TAG}"
 
       - name: Atualizar branch publicacao
         run: |
           set -e
-          VERSAO="${GITHUB_REF_NAME#v}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git ls-remote --exit-code --heads origin publicacao >/dev/null; then
@@ -61,6 +95,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSAO="${GITHUB_REF_NAME#v}"
-          gh release create "${GITHUB_REF_NAME}" "publicacao/versoes/Vigencias-${VERSAO}.html#Vigencias.html" \
+          gh release create "${TAG}" "publicacao/versoes/Vigencias-${VERSAO}.html#Vigencias.html" \
             --title "Vigências ${VERSAO}" --notes-file "publicacao/notas-${VERSAO}.md" --verify-tag
+
+      - name: Resumo
+        run: |
+          {
+            echo "## Vigências ${VERSAO} publicada"
+            echo
+            echo "Os computadores do setor veem a versão nova ao abrir o sistema ou em até 6 horas."
+          } >> "$GITHUB_STEP_SUMMARY"
