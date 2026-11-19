@@ -4,18 +4,25 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ## [Não publicado]
 
+## [1.6.0] - 2026-11-19 (revisão 7)
+
+### Adicionado
+- Filtro por empresa nas listas de contratos e de OF/OS.
+- Busca por item ou fornecedor e filtro por fornecedor na tabela de itens da tela da ARP, e busca na tabela de itens da tela do contrato, quando há muitos itens.
+- Nas janelas de nova OF/OS e de aditivo, quando há muitos itens: busca por item, opção "Só os preenchidos" e contagem do que já foi preenchido. O que foi digitado continua valendo mesmo com o filtro.
+- No aditivo de ARP, filtro por fornecedor, o que facilita o reequilíbrio de uma empresa só.
+
 ### Alterado
-- No cadastro do contrato, a ARP é escolhida num campo de busca por número ou objeto. Aparecem primeiro as ARPs vigentes que têm itens da empresa do contrato, depois as outras vigentes e, por último, as vencidas, com o vencimento de cada uma.
-- No item do contrato, o item da ARP é escolhido num campo de busca pela descrição, com unidade, cota, saldo e valor à vista. Itens sem saldo ficam no fim da lista.
-- Nas janelas de nova OF/OS e de aditivo (de contrato e de ARP), quando há muitos itens, aparecem busca por item e a opção "Só os preenchidos", e a tabela rola dentro da janela. O que já foi digitado continua valendo mesmo com o filtro.
-- No aditivo de ARP, os fornecedores aparecem agrupados por item e é possível filtrar por fornecedor, o que facilita o reequilíbrio de uma empresa só.
-- As listas de ARPs, contratos e OF/OS mostram 20 linhas por página. Planilha e PDF continuam levando a lista inteira.
-- As listas de contratos e de OF/OS podem ser filtradas por empresa. Os números nos botões de situação passam a considerar a empresa e a busca escolhidas.
+- No cadastro do contrato, a ARP é escolhida num campo de busca por número ou objeto. Aparecem primeiro as ARPs vigentes que têm itens da empresa do contrato, depois as outras vigentes e, por último, as vencidas.
+- No item do contrato, o item da ARP é escolhido num campo de busca pela descrição, com unidade, cota, saldo e valor à vista. Itens sem saldo ficam no fim.
+- As listas de ARPs, contratos e OF/OS, e as tabelas de itens e de OF/OS das telas da ARP e do contrato, mostram 20 linhas por página. Planilha e PDF continuam saindo completos.
+- Os números nos botões de situação das listas passam a considerar a empresa e a busca escolhidas.
+- No aditivo de ARP, os fornecedores aparecem agrupados por item.
+- Na tela da ARP, os contratos encerrados ficam recolhidos em "Mostrar encerrados". Na tela do contrato, as OF/OS de vigências anteriores ficam recolhidas em "Mostrar de vigências anteriores".
+- No Início, cada mês mostra até 6 vencimentos, com "Mostrar mais", e a área de entregas mostra até 12 OF/OS, com "Mostrar todas". O modo lista mostra 20 por página.
+
+### Corrigido
 - A busca na lista de OF/OS passa a ignorar acentos, como nas outras listas.
-- Na tela da ARP, a tabela de itens ganhou busca por item ou fornecedor e filtro por fornecedor quando há muitos itens, e mostra 20 itens por página. Os contratos encerrados ficam recolhidos em "Mostrar encerrados".
-- Na tela do contrato, a tabela de itens ganhou busca quando há muitos itens, e itens e OF/OS mostram 20 por página. As OF/OS de vigências anteriores ficam recolhidas em "Mostrar de vigências anteriores".
-- O PDF das telas da ARP e do contrato continua saindo completo, sem filtros.
-- No Início, cada mês mostra até 6 vencimentos, com "Mostrar mais" para ver o resto, e a área de entregas mostra até 12 OF/OS, com "Mostrar todas". O modo lista mostra 20 por página.
 
 ## [1.5.0] - 2026-11-19 (revisão 6)
 
