@@ -1,10 +1,44 @@
 {
-  "versao": "1.5.0",
+  "versao": "1.6.0",
   "data": "2026-11-19",
-  "arquivo": "versoes/Vigencias-1.5.0.html",
-  "sha256": "ef3489fcf135b7a339fc6f273faa5dd963874e78ea13d0bfca8567af236bfb46",
-  "tamanho": 738578,
+  "arquivo": "versoes/Vigencias-1.6.0.html",
+  "sha256": "32148b192045aad651b7968394277a2de7d22f042f808ffad4ae00f8c0caa7ec",
+  "tamanho": 756420,
   "notas": [
+    {
+      "versao": "1.6.0",
+      "data": "2026-11-19",
+      "rotulo": "(revisão 7)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Filtro por empresa nas listas de contratos e de OF/OS.",
+            "Busca por item ou fornecedor e filtro por fornecedor na tabela de itens da tela da ARP, e busca na tabela de itens da tela do contrato, quando há muitos itens.",
+            "Nas janelas de nova OF/OS e de aditivo, quando há muitos itens: busca por item, opção \"Só os preenchidos\" e contagem do que já foi preenchido. O que foi digitado continua valendo mesmo com o filtro.",
+            "No aditivo de ARP, filtro por fornecedor, o que facilita o reequilíbrio de uma empresa só."
+          ]
+        },
+        {
+          "titulo": "Alterado",
+          "itens": [
+            "No cadastro do contrato, a ARP é escolhida num campo de busca por número ou objeto. Aparecem primeiro as ARPs vigentes que têm itens da empresa do contrato, depois as outras vigentes e, por último, as vencidas.",
+            "No item do contrato, o item da ARP é escolhido num campo de busca pela descrição, com unidade, cota, saldo e valor à vista. Itens sem saldo ficam no fim.",
+            "As listas de ARPs, contratos e OF/OS, e as tabelas de itens e de OF/OS das telas da ARP e do contrato, mostram 20 linhas por página. Planilha e PDF continuam saindo completos.",
+            "Os números nos botões de situação das listas passam a considerar a empresa e a busca escolhidas.",
+            "No aditivo de ARP, os fornecedores aparecem agrupados por item.",
+            "Na tela da ARP, os contratos encerrados ficam recolhidos em \"Mostrar encerrados\". Na tela do contrato, as OF/OS de vigências anteriores ficam recolhidas em \"Mostrar de vigências anteriores\".",
+            "No Início, cada mês mostra até 6 vencimentos, com \"Mostrar mais\", e a área de entregas mostra até 12 OF/OS, com \"Mostrar todas\". O modo lista mostra 20 por página."
+          ]
+        },
+        {
+          "titulo": "Corrigido",
+          "itens": [
+            "A busca na lista de OF/OS passa a ignorar acentos, como nas outras listas."
+          ]
+        }
+      ]
+    },
     {
       "versao": "1.5.0",
       "data": "2026-11-19",
