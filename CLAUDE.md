@@ -109,8 +109,8 @@ Todas as alterações são feitas por agente, a pedido do Denilson. Alterar e pu
 3. Se a mudança for perceptível para quem usa o sistema, acrescente um item na seção `## [Não publicado]` do `CHANGELOG.md` (ver "Como escrever o CHANGELOG"). Mudança só interna (testes, refatoração, docs) não entra.
 4. Atualize `docs/requisitos.md`, `docs/design.md` e `README.md` conforme "Ao mudar requisitos".
 5. Commits pequenos, mensagem em português no imperativo ("Adiciona filtro por empresa na lista de contratos").
-6. `git push -u origin claude/<assunto>` e abra o PR com `gh pr create` (título curto, corpo com o que mudou e como foi verificado).
-7. Espere o CI passar. **Só junte na `main` quando o Denilson aprovar** ("pode juntar", "aprovado"). Junte com `gh pr merge --squash --delete-branch`.
+6. `git push -u origin claude/<assunto>` e abra o PR com `gh pr create` (título curto, corpo com o que mudou e como foi verificado). Onde o `gh` não tiver GraphQL (sessões na nuvem), use a API REST: `gh api repos/codeNilson/CEGEA-vigencias/pulls -f title=... -f head=claude/<assunto> -f base=main -f body=...`.
+7. Espere o CI passar. **Só junte na `main` quando o Denilson aprovar** ("pode juntar", "aprovado"). Junte com `gh pr merge --squash --delete-branch` (ou, via REST, `gh api -X PUT repos/codeNilson/CEGEA-vigencias/pulls/<n>/merge -f merge_method=squash` e apague a branch).
 8. Diga ao Denilson o que ficou acumulado para a próxima versão (itens de `[Não publicado]`).
 
 Pedido pequeno e sem risco, com o Denilson dizendo que pode ir direto: ainda assim use branch e PR, mas pode juntar assim que o CI passar.
