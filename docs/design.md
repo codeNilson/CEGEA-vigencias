@@ -116,7 +116,7 @@ aditivos[]
   id
   identificacao         texto
   data                  data
-  tipo                  "prazo" | "quantidade" | "prazo_quantidade" | "reequilibrio" (rev. 5)
+  tipo                  "prazo" | "quantidade" | "prazo_quantidade" | "reequilibrio" (rev. 5) | "errata" | "outro" (rev. 8)
   novaDataFim           data, quando o tipo inclui prazo
   quantidades[]         quando o tipo inclui quantidade
     parcelaId
@@ -154,9 +154,9 @@ itens[]
 aditivos[]
   id
   identificacao         texto
-  tipo                  "prazo" | "valor" | "reequilibrio"
+  tipo                  "prazo" | "valor" | "reequilibrio" | "errata" | "outro" (rev. 8)
   dataAssinatura        data
-  inicioEfeitos         data
+  inicioEfeitos         data (em "errata" e "outro", igual a dataAssinatura)
   novaDataFim           data, só no tipo "prazo"
   alteracoes[]          tipos "valor" e "reequilibrio"
     itemId
@@ -407,3 +407,10 @@ O setor acumula ARPs, contratos, itens e OF/OS. Nenhuma tela pode depender de a 
 - Fichas da ARP e do contrato: `filtrarItensAta`, `contratosDaAta`, `filtrarItensContrato` e `separarOrdensPorVigencia` (puros, em `seletores.ts`). Os hooks ficam antes do retorno de "não encontrado", com dados vazios quando o registro não existe. Na impressão (`useImprimindo`) os filtros são ignorados. `Paginacao` com `soComVariasPaginas` não aparece quando tudo cabe numa página.
 - Início: `limitar` (puro, em `seletores.ts`) corta os cartões por mês (6) e as entregas (12), com expansão local na tela; o modo lista usa `usePaginacao`. O visor de TV já tinha paginação própria e não mudou.
 - Demonstração com volume: `?demo=grande` acrescenta 40 ARPs (uma com 120 itens), 150 contratos e centenas de OF/OS.
+
+## 12. Revisão 8: edição de aditivos, errata e outra alteração (19/11/2026)
+
+- Edição: `FormAditivoAta` e `FormAditivoContrato` recebem `aditivo` opcional. Na edição, o formulário calcula os valores "atuais" sobre uma cópia do agregado sem esse aditivo, e ao salvar troca o elemento de mesmo `id` na lista. A mesclagem já compara listas internas por `id` (seção 4.2), então editar um aditivo enquanto outra pessoa lança uma OF/OS não gera conflito.
+- `errata` e `outro` são tipos só de registro (`TIPOS_SO_REGISTRO`, `ehSoRegistro` em `tipos.ts`). Os cálculos usam listas positivas de tipos (prazo; quantidade; valor e reequilíbrio), e `quantidadeVigenteParcela` exclui os dois de forma explícita, então nenhum dado nesses aditivos muda vencimento, período, quantidade ou valor. A validação exige a descrição (`observacoes`) e recusa prazo, quantidades ou valores.
+- Por que "outra alteração" não altera itens: o que cabe nela (troca de modelo, mudança de cláusula, endereço de entrega) não tem regra de cálculo comum. Se a descrição de um item mudar, edita-se o item; quantidade e valor continuam nos tipos próprios.
+- Compatibilidade: só foram acrescentados valores ao `enum` de `tipo`. Arquivos antigos são lidos sem mudança. Uma janela ainda aberta com versão anterior acusa erro de leitura no arquivo que tiver aditivo `errata` ou `outro` até recarregar; gravar ela já não pode, pela regra de `versaoMinima` (seção 10.3).

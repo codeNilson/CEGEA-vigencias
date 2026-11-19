@@ -20,7 +20,7 @@ import {
 import { formatarData } from '../dominio/datas';
 import { formatarQuantidade, centavosParaReais, quantidadeParaNumero, totalCentavos, valorParaReais } from '../dominio/numeros';
 import { dataLimiteOrdem, situacaoOrdem } from '../dominio/prazos';
-import { ROTULO_ADITIVO_ATA, ROTULO_SITUACAO_ORDEM, rotuloSituacao, type Ata, type Contrato, type Empresa } from '../dominio/tipos';
+import { ROTULO_ADITIVO_ATA, ROTULO_ADITIVO_CONTRATO, ehSoRegistro, ROTULO_SITUACAO_ORDEM, rotuloSituacao, type Ata, type Contrato, type Empresa } from '../dominio/tipos';
 import type { LinhaDoc } from '../estado/seletores';
 import { compararNumeroDoc, objetoAta } from '../dominio/texto';
 
@@ -222,7 +222,7 @@ export function exportarContrato(c: Contrato, empresa: Empresa | undefined, ata:
     wb,
     folha(
       [['Aditivo', 'texto', 24], ['Tipo', 'texto', 16], ['Assinatura', 'data'], ['Início dos efeitos', 'data', 16], ['Nova data fim', 'data', 14], ['Observações', 'texto', 40]],
-      c.aditivos.map((a) => [a.identificacao, { prazo: 'Prazo', valor: 'Valor', reequilibrio: 'Reequilíbrio' }[a.tipo], a.dataAssinatura, a.inicioEfeitos, a.novaDataFim, a.observacoes]),
+      c.aditivos.map((a) => [a.identificacao, ROTULO_ADITIVO_CONTRATO[a.tipo], a.dataAssinatura, a.inicioEfeitos, a.novaDataFim, a.observacoes]),
     ),
     'Aditivos',
   );
@@ -376,7 +376,7 @@ export function montarExportacaoCompleta(atas: Ata[], contratos: Contrato[], emp
         c.fiscal,
         [...c.aditivos]
           .sort((x, y) => x.inicioEfeitos.localeCompare(y.inicioEfeitos))
-          .map((x) => `${x.identificacao || 'Aditivo'} (${{ prazo: 'Prazo', valor: 'Valor', reequilibrio: 'Reequilíbrio' }[x.tipo]}, a partir de ${formatarData(x.inicioEfeitos)}${x.novaDataFim ? `, vence ${formatarData(x.novaDataFim)}` : ''})`)
+          .map((x) => `${x.identificacao || 'Aditivo'} (${ROTULO_ADITIVO_CONTRATO[x.tipo]}, ${ehSoRegistro(x.tipo) ? formatarData(x.dataAssinatura) : `a partir de ${formatarData(x.inicioEfeitos)}`}${x.novaDataFim ? `, vence ${formatarData(x.novaDataFim)}` : ''})`)
           .join('; '),
         c.observacoes,
       ]),

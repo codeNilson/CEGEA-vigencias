@@ -1,6 +1,6 @@
 import { diferencaDias } from './datas';
 import { totalCentavos } from './numeros';
-import type { AditivoAta, AditivoContrato, Ata, Contrato, FaixaPrazo, Ordem, Parcela, Situacao } from './tipos';
+import { ehSoRegistro, type AditivoAta, type AditivoContrato, type Ata, type Contrato, type FaixaPrazo, type Ordem, type Parcela, type Situacao } from './tipos';
 
 /** Antecedência do alerta de ata e contrato (RF12). */
 export const ALERTA_VIGENCIA_DIAS = 90;
@@ -61,7 +61,7 @@ export function quantidadeVigenteParcela(ata: Ata, parcela: Parcela): number {
   let q = parcela.quantidade;
   let ref = '';
   ata.aditivos.forEach((a) => {
-    if (a.tipo === 'prazo' || a.tipo === 'reequilibrio' || a.data < ref) return;
+    if (a.tipo === 'prazo' || a.tipo === 'reequilibrio' || ehSoRegistro(a.tipo) || a.data < ref) return;
     const alt = a.quantidades.find((x) => x.parcelaId === parcela.id);
     if (alt) {
       q = alt.novaQuantidade;
@@ -115,7 +115,7 @@ function valorEmData(c: Contrato, itemId: string, data: string, campo: Campo, or
   let v = original;
   c.aditivos
     .map((a, i) => ({ a, i }))
-    .filter(({ a }) => a.tipo !== 'prazo' && a.inicioEfeitos <= data)
+    .filter(({ a }) => (a.tipo === 'valor' || a.tipo === 'reequilibrio') && a.inicioEfeitos <= data)
     .sort((x, y) => x.a.inicioEfeitos.localeCompare(y.a.inicioEfeitos) || x.i - y.i)
     .forEach(({ a }) => {
       const alt = a.alteracoes.find((x) => x.itemId === itemId);
@@ -144,7 +144,7 @@ export function historicoValores(c: Contrato, itemId: string): Array<{ desde: st
   const linhas = [{ desde: c.dataInicio, valor: item.valorUnitario, origem: 'Original' }];
   c.aditivos
     .map((a, i) => ({ a, i }))
-    .filter(({ a }) => a.tipo !== 'prazo')
+    .filter(({ a }) => a.tipo === 'valor' || a.tipo === 'reequilibrio')
     .sort((x, y) => x.a.inicioEfeitos.localeCompare(y.a.inicioEfeitos) || x.i - y.i)
     .forEach(({ a }) => {
       const alt = a.alteracoes.find((x) => x.itemId === itemId);

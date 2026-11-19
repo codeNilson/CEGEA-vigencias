@@ -309,6 +309,7 @@ table.tabela { border-collapse: collapse; width: 100%; }
 .evento-cab { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .evento-cab strong { font-size: 15.5px; font-weight: 800; color: var(--petroleo); }
 .evento-corpo { font-size: 14px; color: var(--texto-2); margin-top: 3px; }
+.texto-aditivo { white-space: pre-line; }
 
 /* ---------- Modal e gaveta ---------- */
 

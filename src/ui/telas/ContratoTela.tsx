@@ -29,10 +29,11 @@ import {
   totalCentavos,
 } from '../../dominio/numeros';
 import { dataLimite, dataLimiteOrdem, situacaoOrdem } from '../../dominio/prazos';
-import type { AditivoContrato, Contrato, ItemContrato, Ordem, Parcela } from '../../dominio/tipos';
+import { ROTULO_ADITIVO_CONTRATO, ehSoRegistro, type AditivoContrato, type Contrato, type ItemContrato, type Ordem, type Parcela } from '../../dominio/tipos';
 import { validarAditivoContrato, validarContrato, validarEncerramento, validarOrdem } from '../../dominio/validacoes';
 import { aditivosDoItemContrato, dependentesDoContrato, dependentesDoItemContrato } from '../../dominio/dependencias';
 import { exportarContrato } from '../../exportacao/planilha';
+import { NOTA_SO_REGISTRO, rotuloObservacoesAditivo } from '../textosAditivo';
 import {
   CabecalhoImpressao,
   Campo,
@@ -295,31 +296,43 @@ function FormItemContrato({ contrato, item, aoFechar }: { contrato: Contrato; it
 
 // ---------- Aditivos ----------
 
-function FormAditivoContrato({ contrato, aoFechar }: { contrato: Contrato; aoFechar: () => void }) {
+/** Novo aditivo ou, com `aditivo`, edição de um existente (revisão 8). */
+function FormAditivoContrato({ contrato: contratoTela, aditivo, aoFechar }: { contrato: Contrato; aditivo?: AditivoContrato; aoFechar: () => void }) {
+  // Na edição, vencimento, quantidades e valores "atuais" são os de antes deste aditivo.
+  const contrato = aditivo ? { ...contratoTela, aditivos: contratoTela.aditivos.filter((a) => a.id !== aditivo.id) } : contratoTela;
   const fimAtual = dataFimVigenteContrato(contrato);
-  const [tipo, setTipo] = useState<AditivoContrato['tipo']>('prazo');
-  const [identificacao, setIdentificacao] = useState('');
-  const [dataAssinatura, setDataAssinatura] = useState(hojeISO());
-  const [inicioEfeitos, setInicioEfeitos] = useState(somarDias(fimAtual, 1));
-  const [novaDataFim, setNovaDataFim] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [alt, setAlt] = useState<Record<string, { q: string; v: string }>>({});
+  const [tipo, setTipo] = useState<AditivoContrato['tipo']>(aditivo?.tipo ?? 'prazo');
+  const [identificacao, setIdentificacao] = useState(aditivo?.identificacao ?? '');
+  const [dataAssinatura, setDataAssinatura] = useState(aditivo?.dataAssinatura ?? hojeISO());
+  const [inicioEfeitos, setInicioEfeitos] = useState(aditivo?.inicioEfeitos ?? somarDias(fimAtual, 1));
+  const [novaDataFim, setNovaDataFim] = useState(aditivo?.novaDataFim ?? '');
+  const [observacoes, setObservacoes] = useState(aditivo?.observacoes ?? '');
+  const [alt, setAlt] = useState<Record<string, { q: string; v: string }>>(
+    Object.fromEntries(
+      aditivo?.alteracoes.map((x) => [
+        x.itemId,
+        { q: x.novaQuantidade != null ? textoQuantidade(x.novaQuantidade) : '', v: x.novoValorUnitario != null ? textoValor(x.novoValorUnitario) : '' },
+      ]) ?? [],
+    ),
+  );
+  const soRegistro = ehSoRegistro(tipo);
 
   const mudarTipo = (t: AditivoContrato['tipo']) => {
     setTipo(t);
-    setInicioEfeitos(t === 'prazo' ? somarDias(fimAtual, 1) : hojeISO());
+    // Na edição, mantém as datas já digitadas.
+    if (!aditivo) setInicioEfeitos(t === 'prazo' ? somarDias(fimAtual, 1) : hojeISO());
   };
   const ref = inicioEfeitos || hojeISO();
 
   return (
     <ModalForm
       largo
-      titulo={`Novo aditivo do contrato ${contrato.numero}`}
+      titulo={aditivo ? `Editar aditivo do contrato ${contrato.numero}` : `Novo aditivo do contrato ${contrato.numero}`}
       aoFechar={aoFechar}
       aoSalvar={async () => {
         const erros: string[] = [];
         const alteracoes =
-          tipo === 'prazo'
+          tipo === 'prazo' || soRegistro
             ? []
             : Object.entries(alt)
                 .map(([itemId, { q, v }]) => {
@@ -331,19 +344,22 @@ function FormAditivoContrato({ contrato, aoFechar }: { contrato: Contrato; aoFec
                 })
                 .filter((a) => a.novaQuantidade != null || a.novoValorUnitario != null);
         if (erros.length) return erros;
-        const c = atual(contrato);
+        const c = atual(contratoTela);
+        if (aditivo && !c.aditivos.some((a) => a.id === aditivo.id)) return ['Este aditivo foi excluído por outro usuário.'];
         const ad: AditivoContrato = {
-          id: novoId(),
+          id: aditivo?.id ?? novoId(),
           identificacao: identificacao.trim(),
           tipo,
           dataAssinatura,
-          inicioEfeitos,
+          // Errata e outra alteração não têm efeito: a data é a da assinatura, só para ordenar o histórico.
+          inicioEfeitos: soRegistro ? dataAssinatura : inicioEfeitos,
           novaDataFim: tipo === 'prazo' ? novaDataFim : null,
           alteracoes,
           observacoes,
         };
         const e2 = validarAditivoContrato(ad, c);
         if (e2.length) return e2;
+        if (aditivo) return gravar({ ...c, aditivos: c.aditivos.map((a) => (a.id === ad.id ? ad : a)) }, validar, 'Aditivo alterado.');
         return gravar({ ...c, aditivos: [...c.aditivos, ad] }, validar, 'Aditivo registrado.');
       }}
     >
@@ -356,25 +372,31 @@ function FormAditivoContrato({ contrato, aoFechar }: { contrato: Contrato; aoFec
               ['prazo', 'Prazo'],
               ['valor', 'Valor'],
               ['reequilibrio', 'Reequilíbrio econômico-financeiro'],
+              ['errata', 'Errata'],
+              ['outro', 'Outra alteração'],
             ]}
           />
         </Campo>
         <Campo rotulo="Identificação" className="span2">
-          <Entrada valor={identificacao} muda={setIdentificacao} placeholder="1º Termo Aditivo" autoFocus />
+          <Entrada valor={identificacao} muda={setIdentificacao} placeholder={tipo === 'errata' ? 'Errata do 1º Termo Aditivo' : '1º Termo Aditivo'} autoFocus />
         </Campo>
         <Campo rotulo="Assinatura">
           <EntradaData valor={dataAssinatura} muda={setDataAssinatura} />
         </Campo>
-        <Campo rotulo="Início dos efeitos">
-          <EntradaData valor={inicioEfeitos} muda={setInicioEfeitos} />
-        </Campo>
+        {!soRegistro && (
+          <Campo rotulo="Início dos efeitos">
+            <EntradaData valor={inicioEfeitos} muda={setInicioEfeitos} />
+          </Campo>
+        )}
         {tipo === 'prazo' && (
           <Campo rotulo="Novo vencimento" className="span2" dica={`Vencimento atual: ${formatarData(fimAtual)}`}>
             <EntradaData valor={novaDataFim} muda={setNovaDataFim} />
           </Campo>
         )}
       </div>
-      {tipo === 'prazo' ? (
+      {soRegistro ? (
+        <p className="nota">{NOTA_SO_REGISTRO}</p>
+      ) : tipo === 'prazo' ? (
         <p className="nota">
           A prorrogação começa uma nova vigência a partir do início dos efeitos: o saldo de cada item volta à quantidade contratada. As OF/OS da vigência anterior
           continuam no histórico.
@@ -420,7 +442,7 @@ function FormAditivoContrato({ contrato, aoFechar }: { contrato: Contrato; aoFec
           />
         </>
       )}
-      <Campo rotulo="Observações">
+      <Campo rotulo={rotuloObservacoesAditivo(tipo)}>
         <textarea className="entrada" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
       </Campo>
     </ModalForm>
@@ -598,7 +620,7 @@ type ModalAberto =
   | null
   | { t: 'editar' }
   | { t: 'item'; item?: ItemContrato }
-  | { t: 'aditivo' }
+  | { t: 'aditivo'; aditivo?: AditivoContrato }
   | { t: 'ordem'; ordem?: Ordem }
   | { t: 'entrega'; ordem: Ordem }
   | { t: 'encerrar' };
@@ -939,8 +961,12 @@ export function ContratoTela({ id }: { id: string }) {
             <div key={ad.id} className={cls('evento', ad.tipo === 'prazo' && 'prazo-ev')}>
               <div className="evento-cab">
                 <strong>{ad.identificacao || 'Aditivo'}</strong>
-                <span className="tag">{{ prazo: 'Prazo', valor: 'Valor', reequilibrio: 'Reequilíbrio' }[ad.tipo]}</span>
-                <span className="num pequeno fraco">assinado em {formatarData(ad.dataAssinatura)} · vale a partir de {formatarData(ad.inicioEfeitos)}</span>
+                <span className="tag">{ROTULO_ADITIVO_CONTRATO[ad.tipo]}</span>
+                <span className="num pequeno fraco">
+                  assinado em {formatarData(ad.dataAssinatura)}
+                  {!ehSoRegistro(ad.tipo) && <> · vale a partir de {formatarData(ad.inicioEfeitos)}</>}
+                </span>
+                {!encerrado && <button className="btn btn-leve btn-mini nao-imprimir" onClick={() => setModal({ t: 'aditivo', aditivo: ad })}>Editar</button>}
                 <button className="btn btn-leve btn-mini nao-imprimir" onClick={() => pedir('Excluir aditivo', <p>Excluir o aditivo {ad.identificacao || ''}? Vencimento, valores e saldo serão recalculados.</p>, removerDe('aditivos', ad.id, 'Aditivo excluído.'))}>Excluir</button>
               </div>
               <div className="evento-corpo">
@@ -956,7 +982,7 @@ export function ContratoTela({ id }: { id: string }) {
                     </div>
                   );
                 })}
-                {ad.observacoes && <div className="fraco">{ad.observacoes}</div>}
+                {ad.observacoes && <div className={cls('texto-aditivo', !ehSoRegistro(ad.tipo) && 'fraco')}>{ad.observacoes}</div>}
               </div>
             </div>
           ))}
@@ -965,7 +991,7 @@ export function ContratoTela({ id }: { id: string }) {
 
       {modal?.t === 'editar' && <FormContrato contrato={c} aoFechar={() => setModal(null)} />}
       {modal?.t === 'item' && <FormItemContrato contrato={c} item={modal.item} aoFechar={() => setModal(null)} />}
-      {modal?.t === 'aditivo' && <FormAditivoContrato contrato={c} aoFechar={() => setModal(null)} />}
+      {modal?.t === 'aditivo' && <FormAditivoContrato contrato={c} aditivo={modal.aditivo} aoFechar={() => setModal(null)} />}
       {modal?.t === 'ordem' && <FormOrdem contrato={c} ordem={modal.ordem} aoFechar={() => setModal(null)} />}
       {modal?.t === 'entrega' && <FormEntrega contrato={c} ordem={modal.ordem} aoFechar={() => setModal(null)} />}
       {modal?.t === 'encerrar' && <FormEncerramento contrato={c} aoFechar={() => setModal(null)} />}

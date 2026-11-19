@@ -2,7 +2,7 @@ import { ehDataValida } from './datas';
 import { cnpjValido } from './texto';
 import { acharParcela, saldoItem, saldoParcela, dataFimVigenteContrato } from './calculos';
 import { formatarQuantidade } from './numeros';
-import type { AditivoAta, AditivoContrato, Ata, Contrato, Empresa, Ordem } from './tipos';
+import { ehSoRegistro, type AditivoAta, type AditivoContrato, type Ata, type Contrato, type Empresa, type Ordem } from './tipos';
 
 export type Erros = string[];
 
@@ -57,9 +57,19 @@ export function validarAta(a: Ata, todas: Iterable<Ata>): Erros {
   return erros;
 }
 
+/** Revisão 8: errata e "outra alteração" só guardam o texto. Não podem carregar prazo, quantidade nem valor. */
+function soRegistro(erros: Erros, tipo: string, observacoes: string, novaDataFim: string | null, alteracoes: number) {
+  if (!observacoes.trim()) erros.push(tipo === 'errata' ? 'Descreva o que a errata corrige.' : 'Descreva o que o aditivo altera.');
+  if (novaDataFim || alteracoes > 0) erros.push('Errata e outra alteração não mudam vencimento, quantidade nem valor.');
+}
+
 export function validarAditivoAta(ad: AditivoAta, ata: Ata): Erros {
   const erros: Erros = [];
   if (!ehDataValida(ad.data)) erros.push('Informe a data do aditivo.');
+  if (ehSoRegistro(ad.tipo)) {
+    soRegistro(erros, ad.tipo, ad.observacoes, ad.novaDataFim, ad.quantidades.length + ad.valores.length);
+    return erros;
+  }
   if (ad.tipo === 'reequilibrio') {
     if (ad.inicioEfeitos && !ehDataValida(ad.inicioEfeitos)) erros.push('Informe o início dos efeitos.');
     if (ad.valores.length === 0) erros.push('Informe o novo valor unitário de pelo menos um fornecedor.');
@@ -130,6 +140,10 @@ export function validarAditivoContrato(ad: AditivoContrato, c: Contrato): Erros 
   const erros: Erros = [];
   if (c.encerramento) erros.push('Contrato encerrado não pode receber aditivo.');
   if (!ehDataValida(ad.dataAssinatura)) erros.push('Informe a data de assinatura.');
+  if (ehSoRegistro(ad.tipo)) {
+    soRegistro(erros, ad.tipo, ad.observacoes, ad.novaDataFim, ad.alteracoes.length);
+    return erros;
+  }
   if (!ehDataValida(ad.inicioEfeitos)) erros.push('Informe o início dos efeitos.');
   if (ad.tipo === 'prazo') {
     if (!ad.novaDataFim || !ehDataValida(ad.novaDataFim)) erros.push('Informe o novo vencimento.');
