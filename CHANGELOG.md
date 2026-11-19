@@ -12,6 +12,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 - As listas de ARPs, contratos e OF/OS mostram 20 linhas por página. Planilha e PDF continuam levando a lista inteira.
 - As listas de contratos e de OF/OS podem ser filtradas por empresa. Os números nos botões de situação passam a considerar a empresa e a busca escolhidas.
 - A busca na lista de OF/OS passa a ignorar acentos, como nas outras listas.
+- Na tela da ARP, a tabela de itens ganhou busca por item ou fornecedor e filtro por fornecedor quando há muitos itens, e mostra 20 itens por página. Os contratos encerrados ficam recolhidos em "Mostrar encerrados".
+- Na tela do contrato, a tabela de itens ganhou busca quando há muitos itens, e itens e OF/OS mostram 20 por página. As OF/OS de vigências anteriores ficam recolhidas em "Mostrar de vigências anteriores".
+- O PDF das telas da ARP e do contrato continua saindo completo, sem filtros.
 
 ## [1.5.0] - 2026-11-19 (revisão 6)
 

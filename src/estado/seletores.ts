@@ -5,6 +5,7 @@ import {
   dataFimVigenteContrato,
   diasRestantes,
   faixaPrazo,
+  periodoDaData,
   saldoParcela,
   situacaoAta,
   situacaoContrato,
@@ -12,7 +13,7 @@ import {
 } from '../dominio/calculos';
 import { somarDias } from '../dominio/datas';
 import { dataLimiteOrdem, ordemEmAlerta, situacaoOrdem } from '../dominio/prazos';
-import type { Ata, Contrato, FaixaPrazo, ItemAta, Ordem, Parcela, Situacao, SituacaoOrdem } from '../dominio/tipos';
+import type { Ata, Contrato, FaixaPrazo, ItemAta, ItemContrato, Ordem, Parcela, Situacao, SituacaoOrdem } from '../dominio/tipos';
 import type { EstadoLoja } from './loja';
 import { casaBusca, compararNumeroDoc, objetoAta } from '../dominio/texto';
 
@@ -255,6 +256,57 @@ export function filtrarOrdens(linhas: readonly LinhaOrdem[], f: { filtro: Filtro
       (!f.empresaId || o.contrato.empresaId === f.empresaId) &&
       (!busca || casaBusca(`${o.ordem.numero} ${o.contrato.numero} ${o.empresa} ${o.itens.map((i) => i.descricao).join(' ')}`, busca)),
   );
+}
+
+// ---------- Fichas da ARP e do contrato (revisão 7) ----------
+
+/** Itens do contrato que casam com a busca (descrição ou unidade). */
+export function filtrarItensContrato(itens: readonly ItemContrato[], busca: string): ItemContrato[] {
+  return busca.trim() ? itens.filter((it) => casaBusca(`${it.descricao} ${it.unidade}`, busca)) : [...itens];
+}
+
+/**
+ * OF/OS do contrato, mais recentes primeiro, separadas entre a vigência atual (desde o início
+ * ou a última prorrogação em vigor hoje) e as vigências anteriores.
+ */
+export function separarOrdensPorVigencia(c: Contrato, hoje: string): { atuais: Ordem[]; anteriores: Ordem[] } {
+  const inicio = periodoDaData(c, hoje);
+  const todas = [...c.ordens].sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao));
+  return {
+    atuais: todas.filter((o) => periodoDaData(c, o.dataEmissao) === inicio),
+    anteriores: todas.filter((o) => periodoDaData(c, o.dataEmissao) !== inicio),
+  };
+}
+
+/**
+ * Itens da ARP com os fornecedores que passam no filtro. A busca casa com a descrição do item
+ * (mostra todos os fornecedores dele) ou com o nome do fornecedor (mostra só esse).
+ * Itens sem nenhum fornecedor restante saem da lista.
+ */
+export function filtrarItensAta(
+  ata: Ata,
+  f: { busca: string; empresaId: string },
+  nomeEmpresa: (id: string) => string,
+): Array<{ item: ItemAta; parcelas: Parcela[] }> {
+  const busca = f.busca.trim();
+  const r: Array<{ item: ItemAta; parcelas: Parcela[] }> = [];
+  for (const item of ata.itens) {
+    const parcelas = item.parcelas.filter(
+      (p) => (!f.empresaId || p.empresaId === f.empresaId) && (!busca || casaBusca(`${item.descricao} ${item.unidade} ${nomeEmpresa(p.empresaId)}`, busca)),
+    );
+    if (parcelas.length || (!busca && !f.empresaId)) r.push({ item, parcelas });
+  }
+  return r;
+}
+
+/** Contratos vinculados à ARP: os não encerrados por vencimento, e os encerrados à parte. */
+export function contratosDaAta(ataId: string, contratos: Iterable<Contrato>): { ativos: Contrato[]; encerrados: Contrato[] } {
+  const vinculados = [...contratos].filter((c) => c.ataId === ataId);
+  const porVencimento = (a: Contrato, b: Contrato) => dataFimVigenteContrato(a).localeCompare(dataFimVigenteContrato(b)) || compararNumeroDoc(a.numero, b.numero);
+  return {
+    ativos: vinculados.filter((c) => !c.encerramento).sort(porVencimento),
+    encerrados: vinculados.filter((c) => !!c.encerramento).sort(porVencimento),
+  };
 }
 
 export function contadores(linhas: LinhaDoc[], ordens: LinhaOrdem[]) {

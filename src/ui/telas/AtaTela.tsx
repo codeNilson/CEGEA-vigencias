@@ -38,18 +38,25 @@ import {
   Erros,
   Escolha,
   ModalForm,
+  Paginacao,
   Segmentado,
   Prazo,
   Situacao,
   TagTipo,
   cls,
   useConfirmacao,
+  useImprimindo,
+  usePaginacao,
 } from '../componentes/base';
 import { gravar, irPara, loja, useLoja } from '../contexto';
 import { FormEmpresa } from './Empresas';
 import { EscolhaEmpresa } from '../componentes/EscolhaEmpresa';
 import { EscolhaBusca } from '../componentes/EscolhaBusca';
-import { TabelaLancamento } from '../componentes/TabelaLancamento';
+import { LIMITE_FILTRO_LANCAMENTO, TabelaLancamento } from '../componentes/TabelaLancamento';
+import { FiltroEmpresa } from '../componentes/EscolhaEmpresa';
+import { contratosDaAta, filtrarItensAta } from '../../estado/seletores';
+
+const POR_PAGINA_FICHA = 20;
 import { formatarObjetoAta, objetoAta } from '../../dominio/texto';
 import { FormContrato } from './ContratoTela';
 
@@ -402,6 +409,17 @@ export function AtaTela({ id }: { id: string }) {
   const hoje = useLoja((e) => e.hoje);
   const [modal, setModal] = useState<null | 'editar' | 'item' | 'aditivo' | 'contrato' | ItemAta>(null);
   const { pedir, elemento } = useConfirmacao();
+  // Revisão 7: busca e filtro por fornecedor nos itens, encerrados recolhidos e paginação. Na impressão, tudo.
+  const [buscaItens, setBuscaItens] = useState('');
+  const [fornecedor, setFornecedor] = useState('');
+  const [verEncerrados, setVerEncerrados] = useState(false);
+  const imprimindo = useImprimindo();
+  const nomeEmp = (eid: string) => empresas.get(eid)?.nome ?? '(empresa não encontrada)';
+  const itensFiltrados = ata ? filtrarItensAta(ata, imprimindo ? { busca: '', empresaId: '' } : { busca: buscaItens, empresaId: fornecedor }, nomeEmp) : [];
+  const pagItens = usePaginacao(itensFiltrados, POR_PAGINA_FICHA, `${buscaItens}|${fornecedor}`);
+  const daAta = ata ? contratosDaAta(ata.id, contratosMapa.values()) : { ativos: [], encerrados: [] };
+  const contratosVisiveis = verEncerrados || imprimindo ? [...daAta.ativos, ...daAta.encerrados] : daAta.ativos;
+  const pagContratos = usePaginacao(contratosVisiveis, POR_PAGINA_FICHA, String(verEncerrados));
 
   if (!ata)
     return (
@@ -414,11 +432,10 @@ export function AtaTela({ id }: { id: string }) {
     );
 
   const contratos = [...contratosMapa.values()];
-  const vinculados = contratos.filter((c) => c.ataId === ata.id);
+  const vinculados = [...daAta.ativos, ...daAta.encerrados];
   const s = situacaoAta(ata, hoje);
   const fim = dataFimVigenteAta(ata);
   const dias = diasRestantes(fim, hoje);
-  const nomeEmp = (eid: string) => empresas.get(eid)?.nome ?? '(empresa não encontrada)';
   const aditivos = [...ata.aditivos].sort((a, b) => a.data.localeCompare(b.data));
   const faixa = s === 'vigente' && dias <= 30 ? 'f-critico' : s === 'vigente' && dias <= 90 ? 'f-atencao' : '';
 
@@ -496,7 +513,14 @@ export function AtaTela({ id }: { id: string }) {
       <div className="secao">
         <h2>Itens aderidos e saldo</h2>
         <span className="linha" />
+        {ata.itens.length > 0 && <span className="sub">{ata.itens.length}</span>}
       </div>
+      {ata.itens.length > LIMITE_FILTRO_LANCAMENTO && (
+        <div className="filtros">
+          <input className="entrada busca" placeholder="Buscar item ou fornecedor" value={buscaItens} onChange={(e) => setBuscaItens(e.target.value)} />
+          <FiltroEmpresa valor={fornecedor} muda={setFornecedor} empresas={empresas} ids={ata.itens.flatMap((it) => it.parcelas.map((p) => p.empresaId))} />
+        </div>
+      )}
       <div className="tabela-caixa">
         {ata.itens.length === 0 ? (
           <div className="vazio">Nenhum item aderido. Use “+ Item” para cadastrar.</div>
@@ -513,21 +537,38 @@ export function AtaTela({ id }: { id: string }) {
                   <th className="direita">Valor unitário</th>
                 </tr>
               </thead>
-              <tbody>{ata.itens.map((it) => itemLinhas(it))}</tbody>
+              <tbody>
+                {itensFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="fraco">
+                      Nenhum item com esse filtro.
+                    </td>
+                  </tr>
+                )}
+                {pagItens.itens.map(({ item, parcelas }) => itemLinhas(item, parcelas))}
+              </tbody>
             </table>
             <div className="nota-tabela">Saldo = quantidade registrada - quantidade já contratada pelo órgão.</div>
           </>
         )}
       </div>
+      <Paginacao {...pagItens.paginacao} soComVariasPaginas />
 
       <div className="secao">
         <h2>Contratos desta ARP</h2>
         <span className="linha" />
         <span className="sub">{vinculados.length}</span>
+        {daAta.encerrados.length > 0 && (
+          <div className="acoes">
+            <button className="btn btn-mini" onClick={() => setVerEncerrados(!verEncerrados)}>
+              {verEncerrados ? 'Ocultar encerrados' : `Mostrar ${daAta.encerrados.length} ${daAta.encerrados.length === 1 ? 'encerrado' : 'encerrados'}`}
+            </button>
+          </div>
+        )}
       </div>
       <div className="tabela-caixa">
-        {vinculados.length === 0 ? (
-          <div className="vazio">Nenhum contrato usa esta ARP ainda.</div>
+        {contratosVisiveis.length === 0 ? (
+          <div className="vazio">{vinculados.length ? 'Todos os contratos desta ARP estão encerrados.' : 'Nenhum contrato usa esta ARP ainda.'}</div>
         ) : (
           <table className="tabela">
             <thead>
@@ -540,7 +581,7 @@ export function AtaTela({ id }: { id: string }) {
               </tr>
             </thead>
             <tbody>
-              {vinculados.map((c) => {
+              {pagContratos.itens.map((c) => {
                 const sc = situacaoContrato(c, hoje);
                 const fc = dataFimVigenteContrato(c);
                 return (
@@ -557,6 +598,7 @@ export function AtaTela({ id }: { id: string }) {
           </table>
         )}
       </div>
+      <Paginacao {...pagContratos.paginacao} soComVariasPaginas />
 
       <div className="secao">
         <h2>Aditivos</h2>
@@ -612,7 +654,7 @@ export function AtaTela({ id }: { id: string }) {
     </>
   );
 
-  function itemLinhas(it: ItemAta) {
+  function itemLinhas(it: ItemAta, parcelas: Parcela[]) {
     return (
       <Fragment key={it.id}>
         <tr className="grupo">
@@ -626,7 +668,7 @@ export function AtaTela({ id }: { id: string }) {
             </div>
           </td>
         </tr>
-        {it.parcelas.map((p) => {
+        {parcelas.map((p) => {
           const reg = quantidadeVigenteParcela(ata!, p);
           const saldo = saldoParcela(ata!, p, contratos);
           return (

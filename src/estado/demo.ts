@@ -288,9 +288,10 @@ function volumeDemonstracao(empresas: Empresa[], d: (n: number) => string): Agre
     const inicio = somarDias(ata.dataInicio, 10 + sorteio(200));
     const itens: ItemContrato[] = escolhidas.map(({ it, p }, j) => ({ id: `dg-c${i}-i${j}`, parcelaId: p.id, descricao: it.descricao, unidade: it.unidade, quantidade: Q(50), valorUnitario: p.valorUnitario }));
     const ordens: Ordem[] = [];
-    const nOrdens = sorteio(7);
+    const prorrogado = i % 10 === 0;
+    const nOrdens = prorrogado ? 8 : sorteio(7);
     for (let o = 0; o < nOrdens; o++) {
-      const emissao = somarDias(inicio, 5 + o * 30);
+      const emissao = somarDias(inicio, 5 + o * (prorrogado ? 45 : 30));
       if (emissao > d(0)) break;
       ordens.push({
         id: `dg-c${i}-o${o}`,
@@ -311,7 +312,12 @@ function volumeDemonstracao(empresas: Empresa[], d: (n: number) => string): Agre
         objeto: `Aquisição de ${ata.tema.toLowerCase()}`,
         ataId: ata.id,
         dataInicio: inicio,
-        dataFim: somarDias(inicio, 365),
+        // Um em cada dez foi prorrogado: OF/OS ficam divididas entre a vigência atual e a anterior.
+        dataFim: somarDias(inicio, prorrogado ? 180 : 365),
+        aditivos:
+          prorrogado
+            ? [{ id: `dg-c${i}-ad`, identificacao: '1º Termo Aditivo', tipo: 'prazo' as const, dataAssinatura: somarDias(inicio, 170), inicioEfeitos: somarDias(inicio, 181), novaDataFim: somarDias(inicio, 545), alteracoes: [], observacoes: '' }]
+            : [],
         gestor: 'Ana Lúcia Moreira',
         fiscal: 'Rafael Nogueira',
         itens,

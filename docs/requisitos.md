@@ -7,7 +7,7 @@ Revisão 3 (18/11/2026): modo lista no Início e no visor, contato das empresas,
 Revisão 4 (19/11/2026): data de início da vigência deixou de ser obrigatória no cadastro da ARP.
 Revisão 5 (19/11/2026): reequilíbrio na ARP, máscara de valores, ordenação escolhível, objeto da ARP em maiúsculas, busca e paginação de empresas, escolha de empresa com busca e aviso de empresa repetida.
 Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas de versão e proteção contra versão antiga aberta.
-Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos. Paginação e filtro por empresa nas listas de ARPs, contratos e OF/OS.
+Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos. Paginação e filtro por empresa nas listas de ARPs, contratos e OF/OS. Busca, filtros e paginação nas telas da ARP e do contrato.
 
 ## 1. Objetivo
 
@@ -63,6 +63,7 @@ Item: descrição, unidade de medida. Parcela: fornecedor, tipo (ampla ou cota M
 - CA03.2: Exemplo: parcela com 1000 unidades, contrato de 400 e depois contrato de 450, saldo exibido = 150.
 - CA03.3: O sistema impede vincular a um contrato quantidade maior que o saldo da parcela, exibindo o saldo disponível.
 - CA03.4: A tela da ata mostra, por item e por parcela: quantidade registrada, quantidade contratada e saldo.
+- CA03.5: Com mais de 8 itens, a tabela de itens da ARP tem busca (pela descrição do item, que mostra todos os fornecedores dele, ou pelo nome do fornecedor, que mostra só esse) e filtro por fornecedor. A tabela mostra 20 itens por página, sem separar os fornecedores de um item. Os contratos da ARP aparecem por vencimento; os encerrados ficam recolhidos atrás do botão "Mostrar N encerrados". No PDF sai tudo, sem filtro.
 
 ### RF04. Aditivo de ata
 
@@ -105,6 +106,7 @@ Empresa: nome, CNPJ (opcional), e-mail (opcional, aceita mais de um separado por
 - CA07.1: O saldo de cada item do contrato é: quantidade do período vigente - soma das quantidades das OF/OS emitidas no período vigente.
 - CA07.2: Exemplo: item com 400 unidades e OF de 150, saldo exibido = 250.
 - CA07.3: O sistema impede emitir OF/OS com quantidade maior que o saldo do item, exibindo o saldo disponível.
+- CA07.4: Na tela do contrato, com mais de 8 itens, a tabela de itens tem busca. Itens e OF/OS aparecem 20 por página. As OF/OS mostram só a vigência atual; as de vigências anteriores ficam atrás do botão "Mostrar N de vigências anteriores". No PDF sai tudo, sem filtro.
 
 ### RF08. Aditivos de contrato
 

@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { novaAta, novaEmpresa, novoContrato } from '../dominio/fabrica';
-import { atasParaContrato, filtrarDocumentos, filtrarLancamento, filtrarOrdens, linhasDocumentos, paginar, parcelasParaItemContrato, todasOrdens } from './seletores';
+import {
+  atasParaContrato,
+  contratosDaAta,
+  filtrarDocumentos,
+  filtrarItensAta,
+  filtrarItensContrato,
+  filtrarLancamento,
+  filtrarOrdens,
+  linhasDocumentos,
+  paginar,
+  parcelasParaItemContrato,
+  separarOrdensPorVigencia,
+  todasOrdens,
+} from './seletores';
 import { repositorioDemonstracao } from './demo';
 import { validarArquivo, type Ata, type Colecao, type Contrato } from '../dominio/tipos';
 import { validarContrato } from '../dominio/validacoes';
@@ -8,6 +21,65 @@ import { validarContrato } from '../dominio/validacoes';
 const Q = (n: number) => n * 1000;
 const V = (n: number) => Math.round(n * 10000);
 const HOJE = '2026-11-19';
+
+describe('CA03.5 e CA07.4 fichas da ARP e do contrato', () => {
+  const emp = new Map([
+    ['f1', 'Papelaria Ribeira'],
+    ['f2', 'Mucuripe ME'],
+  ]);
+  const nome = (id: string) => emp.get(id) ?? '';
+  const parcela = (id: string, empresaId: string) => ({ id, empresaId, tipoCota: 'ampla' as const, quantidade: Q(10), valorUnitario: V(1) });
+  const ata = novaAta({
+    numero: '001/2026',
+    dataFim: '2027-01-01',
+    itens: [
+      { id: 'i1', descricao: 'Papel A4', unidade: 'resma', parcelas: [parcela('p1', 'f1'), parcela('p2', 'f2')] },
+      { id: 'i2', descricao: 'Caneta', unidade: 'cx', parcelas: [parcela('p3', 'f1')] },
+    ],
+  });
+  const resumo = (r: ReturnType<typeof filtrarItensAta>) => r.map((x) => [x.item.id, x.parcelas.map((p) => p.id)]);
+
+  it('itens da ARP: busca no item mostra todos os fornecedores; busca ou filtro de fornecedor mostra só ele', () => {
+    expect(resumo(filtrarItensAta(ata, { busca: '', empresaId: '' }, nome))).toEqual([['i1', ['p1', 'p2']], ['i2', ['p3']]]);
+    expect(resumo(filtrarItensAta(ata, { busca: 'a4', empresaId: '' }, nome))).toEqual([['i1', ['p1', 'p2']]]);
+    expect(resumo(filtrarItensAta(ata, { busca: 'mucuripe', empresaId: '' }, nome))).toEqual([['i1', ['p2']]]);
+    expect(resumo(filtrarItensAta(ata, { busca: '', empresaId: 'f1' }, nome))).toEqual([['i1', ['p1']], ['i2', ['p3']]]);
+    expect(resumo(filtrarItensAta(ata, { busca: 'caneta', empresaId: 'f2' }, nome))).toEqual([]);
+  });
+
+  it('contratos da ARP: não encerrados por vencimento, encerrados à parte', () => {
+    const c1 = novoContrato({ numero: '2/2026', ataId: ata.id, dataFim: '2027-05-01' });
+    const c2 = novoContrato({ numero: '1/2026', ataId: ata.id, dataFim: '2026-12-01' });
+    const c3 = novoContrato({ numero: '3/2025', ataId: ata.id, dataFim: '2026-01-01', encerramento: { data: '2026-01-05', termo: '' } });
+    const outro = novoContrato({ numero: '9/2026', ataId: 'outra' });
+    const r = contratosDaAta(ata.id, [c1, c2, c3, outro]);
+    expect(r.ativos.map((c) => c.numero)).toEqual(['1/2026', '2/2026']);
+    expect(r.encerrados.map((c) => c.numero)).toEqual(['3/2025']);
+  });
+
+  it('OF/OS do contrato: vigência atual separada das anteriores, mais recentes primeiro', () => {
+    const ordem = (id: string, dataEmissao: string) => ({ id, numero: id, dataEmissao, prazoDias: 5, tipoPrazo: 'corridos' as const, dataEntrega: dataEmissao, itens: [], observacoes: '' });
+    const c = novoContrato({
+      dataInicio: '2025-01-01',
+      dataFim: '2025-12-31',
+      aditivos: [{ id: 'ad', identificacao: '', tipo: 'prazo', dataAssinatura: '2025-12-01', inicioEfeitos: '2026-01-01', novaDataFim: '2026-12-31', alteracoes: [], observacoes: '' }],
+      ordens: [ordem('a', '2025-03-01'), ordem('b', '2026-02-01'), ordem('c', '2025-10-01'), ordem('d', '2026-06-01')],
+    });
+    const r = separarOrdensPorVigencia(c, HOJE);
+    expect(r.atuais.map((o) => o.id)).toEqual(['d', 'b']);
+    expect(r.anteriores.map((o) => o.id)).toEqual(['c', 'a']);
+  });
+
+  it('itens do contrato: busca sem acento pela descrição ou unidade', () => {
+    const itens = [
+      { id: '1', parcelaId: null, descricao: 'Água mineral', unidade: 'garrafão', quantidade: Q(1), valorUnitario: V(1) },
+      { id: '2', parcelaId: null, descricao: 'Copo descartável', unidade: 'pct', quantidade: Q(1), valorUnitario: V(1) },
+    ];
+    expect(filtrarItensContrato(itens, 'agua').map((i) => i.id)).toEqual(['1']);
+    expect(filtrarItensContrato(itens, 'pct').map((i) => i.id)).toEqual(['2']);
+    expect(filtrarItensContrato(itens, ' ')).toHaveLength(2);
+  });
+});
 
 describe('CA21.5 e CA10.12 filtros das listas de contratos e OF/OS', () => {
   const a = novaEmpresa({ nome: 'Água Pura Ltda' });
