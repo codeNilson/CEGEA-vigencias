@@ -1,6 +1,6 @@
 # Vigências
 
-[![CI](https://github.com/codeNilson/vigencias/actions/workflows/ci.yml/badge.svg)](https://github.com/codeNilson/vigencias/actions/workflows/ci.yml)
+[![CI](https://github.com/codeNilson/CEGEA-vigencias/actions/workflows/ci.yml/badge.svg)](https://github.com/codeNilson/CEGEA-vigencias/actions/workflows/ci.yml)
 
 Acompanhamento de vigência de ARPs (Atas de Registro de Preços) e contratos da Célula de Gestão Administrativa da Secretaria Municipal da Infraestrutura (SEINF), Prefeitura de Fortaleza. Controla saldos, aditivos e ordens de fornecimento e de serviço, e destaca o que está perto de vencer para que nenhum prazo de renovação seja perdido.
 
