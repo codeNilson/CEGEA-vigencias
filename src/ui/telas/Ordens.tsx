@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { todasOrdens } from '../../estado/seletores';
+import { filtrarOrdens, passaFiltroOrdens, todasOrdens, type FiltroOrdens } from '../../estado/seletores';
 import { formatarData } from '../../dominio/datas';
 import { formatarCentavos, formatarQuantidade, formatarValorUnitario, totalCentavos } from '../../dominio/numeros';
 import { valorUnitarioEm } from '../../dominio/calculos';
-import type { SituacaoOrdem } from '../../dominio/tipos';
-import { CabecalhoImpressao, Segmentado, SituacaoOrdemTag, cls } from '../componentes/base';
+import { CabecalhoImpressao, Paginacao, Segmentado, SituacaoOrdemTag, cls, usePaginacao } from '../componentes/base';
+import { FiltroEmpresa } from '../componentes/EscolhaEmpresa';
 import { irPara, loja, useLoja, useOrdemAberta, gravar } from '../contexto';
 import { FormEntrega, FormOrdem, validarContratoSalvo } from './ContratoTela';
 
-type Filtro = 'abertas' | SituacaoOrdem | 'todas';
+type Filtro = FiltroOrdens;
+const POR_PAGINA = 20;
 
 /** RF10.10: todas as OF/OS, com itens e quantidades à vista. */
 export function TelaOrdens() {
@@ -18,14 +19,13 @@ export function TelaOrdens() {
   const abrir = useOrdemAberta((s) => s.abrir);
   const [filtro, setFiltro] = useState<Filtro>('abertas');
   const [busca, setBusca] = useState('');
+  const [empresaId, setEmpresaId] = useState('');
   const todas = useMemo(() => todasOrdens({ contratos, empresas, hoje }), [contratos, empresas, hoje]);
-  const passa = (s: SituacaoOrdem, f: Filtro) => f === 'todas' || (f === 'abertas' ? s !== 'entregue' : s === f);
-  const n = (f: Filtro) => todas.filter((o) => passa(o.situacao, f)).length;
-  const linhas = todas.filter((o) => {
-    if (!passa(o.situacao, filtro)) return false;
-    const t = busca.trim().toLowerCase();
-    return !t || `${o.ordem.numero} ${o.contrato.numero} ${o.empresa} ${o.itens.map((i) => i.descricao).join(' ')}`.toLowerCase().includes(t);
-  });
+  // Contagens dos botões respeitam empresa e busca, para mostrar o que cada situação vai trazer.
+  const base = useMemo(() => filtrarOrdens(todas, { filtro: 'todas', empresaId, busca }), [todas, empresaId, busca]);
+  const n = (f: Filtro) => base.filter((o) => passaFiltroOrdens(o.situacao, f)).length;
+  const linhas = base.filter((o) => passaFiltroOrdens(o.situacao, filtro));
+  const { itens: pagina, paginacao } = usePaginacao(linhas, POR_PAGINA, [filtro, empresaId, busca].join('|'));
 
   return (
     <>
@@ -46,9 +46,10 @@ export function TelaOrdens() {
             ['atrasada', 'Atrasadas', n('atrasada')],
             ['pendente', 'No prazo', n('pendente')],
             ['entregue', 'Entregues', n('entregue')],
-            ['todas', 'Todas', todas.length],
+            ['todas', 'Todas', base.length],
           ]}
         />
+        <FiltroEmpresa valor={empresaId} muda={setEmpresaId} empresas={empresas} ids={todas.map((o) => o.contrato.empresaId)} />
         <input className="entrada busca" placeholder="Buscar número, contrato, empresa ou item" value={busca} onChange={(e) => setBusca(e.target.value)} />
       </div>
       <div className="tabela-caixa">
@@ -68,7 +69,7 @@ export function TelaOrdens() {
               </tr>
             </thead>
             <tbody>
-              {linhas.map((o) => (
+              {pagina.map((o) => (
                 <tr key={o.ordem.id} className="clicavel" onClick={() => abrir(o.contrato.id, o.ordem.id)}>
                   <td>
                     <span className="doc-numero">{o.ordem.numero}</span>
@@ -100,6 +101,7 @@ export function TelaOrdens() {
           </table>
         )}
       </div>
+      <Paginacao {...paginacao} />
     </>
   );
 }

@@ -9,6 +9,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 - No item do contrato, o item da ARP é escolhido num campo de busca pela descrição, com unidade, cota, saldo e valor à vista. Itens sem saldo ficam no fim da lista.
 - Nas janelas de nova OF/OS e de aditivo (de contrato e de ARP), quando há muitos itens, aparecem busca por item e a opção "Só os preenchidos", e a tabela rola dentro da janela. O que já foi digitado continua valendo mesmo com o filtro.
 - No aditivo de ARP, os fornecedores aparecem agrupados por item e é possível filtrar por fornecedor, o que facilita o reequilíbrio de uma empresa só.
+- As listas de ARPs, contratos e OF/OS mostram 20 linhas por página. Planilha e PDF continuam levando a lista inteira.
+- As listas de contratos e de OF/OS podem ser filtradas por empresa. Os números nos botões de situação passam a considerar a empresa e a busca escolhidas.
+- A busca na lista de OF/OS passa a ignorar acentos, como nas outras listas.
 
 ## [1.5.0] - 2026-11-19 (revisão 6)
 

@@ -24,6 +24,8 @@ export interface LinhaDoc {
   numero: string;
   objeto: string;
   empresa: string;
+  /** Vazio para ARP. */
+  empresaId: string;
   tipoContrato: 'material' | 'servico' | null;
   inicio: string;
   vencimento: string;
@@ -42,7 +44,7 @@ export function linhasDocumentos(e: Base): LinhaDoc[] {
     const dias = diasRestantes(fim, e.hoje);
     const s = situacaoAta(a, e.hoje);
     linhas.push({
-      tipo: 'ata', id: a.id, numero: a.numero, objeto: objetoAta(a), empresa: '', tipoContrato: null,
+      tipo: 'ata', id: a.id, numero: a.numero, objeto: objetoAta(a), empresa: '', empresaId: '', tipoContrato: null,
       inicio: a.dataInicio, vencimento: fim, vencimentoOriginal: a.dataFim, dias, situacao: s, faixa: faixaPrazo(dias, s),
       aguardandoEncerramento: false,
     });
@@ -53,7 +55,7 @@ export function linhasDocumentos(e: Base): LinhaDoc[] {
     const s = situacaoContrato(c, e.hoje);
     linhas.push({
       tipo: 'contrato', id: c.id, numero: c.numero, objeto: c.objeto,
-      empresa: e.empresas.get(c.empresaId)?.nome ?? '(empresa não encontrada)', tipoContrato: c.tipo,
+      empresa: e.empresas.get(c.empresaId)?.nome ?? '(empresa não encontrada)', empresaId: c.empresaId, tipoContrato: c.tipo,
       inicio: c.dataInicio, vencimento: fim, vencimentoOriginal: c.dataFim, dias, situacao: s, faixa: faixaPrazo(dias, s),
       aguardandoEncerramento: s === 'vencido',
     });
@@ -208,6 +210,50 @@ export function filtrarLancamento<T>(
   const temBusca = f.busca.trim() !== '';
   return linhas.filter(
     (l) => (!f.soPreenchidas || f.preenchida(l)) && (!f.filtroExtra || f.filtroExtra(l)) && (!temBusca || casaBusca(f.textoBusca(l), f.busca)),
+  );
+}
+
+// ---------- Filtros das listas de ARPs, contratos e OF/OS (revisão 7) ----------
+
+export type FiltroDocs = 'vigentes' | 'vencendo' | 'vencidos' | 'encerrados' | 'todos';
+
+export const passaFiltroDocs = (l: LinhaDoc, f: FiltroDocs) =>
+  f === 'todos' ||
+  (f === 'vigentes' && l.situacao === 'vigente') ||
+  (f === 'vencendo' && l.faixa !== 'normal') ||
+  (f === 'vencidos' && l.situacao === 'vencido') ||
+  (f === 'encerrados' && l.situacao === 'encerrado');
+
+/** RF21 e revisão 7: situação, modalidade, empresa e busca; ordem por vencimento ou número. */
+export function filtrarDocumentos(
+  linhas: readonly LinhaDoc[],
+  f: { filtro: FiltroDocs; modalidade?: '' | 'material' | 'servico'; empresaId?: string; busca?: string; ordem?: 'vencimento' | 'numero' },
+): LinhaDoc[] {
+  const busca = f.busca?.trim() ?? '';
+  const r = linhas.filter(
+    (l) =>
+      passaFiltroDocs(l, f.filtro) &&
+      (!f.modalidade || l.tipoContrato === f.modalidade) &&
+      (!f.empresaId || l.empresaId === f.empresaId) &&
+      (!busca || casaBusca(`${l.numero} ${l.objeto} ${l.empresa}`, busca)),
+  );
+  // linhasDocumentos já vem por vencimento.
+  if (f.ordem === 'numero') r.sort((a, b) => compararNumeroDoc(a.numero, b.numero));
+  return r;
+}
+
+export type FiltroOrdens = 'abertas' | SituacaoOrdem | 'todas';
+
+export const passaFiltroOrdens = (s: SituacaoOrdem, f: FiltroOrdens) => f === 'todas' || (f === 'abertas' ? s !== 'entregue' : s === f);
+
+/** RF10.10 e revisão 7: situação, empresa e busca sem acento (número, contrato, empresa ou item). */
+export function filtrarOrdens(linhas: readonly LinhaOrdem[], f: { filtro: FiltroOrdens; empresaId?: string; busca?: string }): LinhaOrdem[] {
+  const busca = f.busca?.trim() ?? '';
+  return linhas.filter(
+    (o) =>
+      passaFiltroOrdens(o.situacao, f.filtro) &&
+      (!f.empresaId || o.contrato.empresaId === f.empresaId) &&
+      (!busca || casaBusca(`${o.ordem.numero} ${o.contrato.numero} ${o.empresa} ${o.itens.map((i) => i.descricao).join(' ')}`, busca)),
   );
 }
 
