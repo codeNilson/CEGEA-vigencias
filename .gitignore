@@ -1,0 +1,26 @@
+# Dependências e build
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+coverage/
+
+# Dados reais da pasta de rede: nunca versionar
+dados/
+_vigencias.json
+
+# Planilhas e PDFs exportados durante testes manuais
+*.xlsx
+*.pdf
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+npm-debug.log*
+.env
+.env.*

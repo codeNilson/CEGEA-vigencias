@@ -1,0 +1,46 @@
+{
+  "name": "vigencias",
+  "version": "1.4.0",
+  "description": "Acompanhamento de vigência de ARPs e contratos da SEINF/Prefeitura de Fortaleza. Arquivo HTML único, sem servidor.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite --open /index.html?demo",
+    "build": "tsc --noEmit && vite build && node -e \"require('fs').renameSync('dist/index.html','dist/Vigencias.html')\"",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview --open /Vigencias.html?demo"
+  },
+  "keywords": [
+    "contratos",
+    "atas de registro de preços",
+    "vigência",
+    "file-system-access-api",
+    "react",
+    "vite"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@fontsource-variable/raleway": "^5.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5",
+    "zod": "^3.25.76",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@types/wicg-file-system-access": "^2023.10.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "fake-indexeddb": "^6.2.8",
+    "typescript": "5.6",
+    "vite": "^5.4.21",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^2.1.9"
+  }
+}
