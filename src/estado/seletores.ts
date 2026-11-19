@@ -14,7 +14,7 @@ import { somarDias } from '../dominio/datas';
 import { dataLimiteOrdem, ordemEmAlerta, situacaoOrdem } from '../dominio/prazos';
 import type { Ata, Contrato, FaixaPrazo, ItemAta, Ordem, Parcela, Situacao, SituacaoOrdem } from '../dominio/tipos';
 import type { EstadoLoja } from './loja';
-import { compararNumeroDoc, objetoAta } from '../dominio/texto';
+import { casaBusca, compararNumeroDoc, objetoAta } from '../dominio/texto';
 
 type Base = Pick<EstadoLoja, 'atas' | 'contratos' | 'empresas' | 'hoje'>;
 
@@ -195,6 +195,20 @@ export function parcelasParaItemContrato(ata: Ata, contrato: Contrato, contratos
     }
   const comSaldo = r.filter((o) => o.saldo > 0);
   return [...comSaldo, ...r.filter((o) => o.saldo <= 0)];
+}
+
+/**
+ * Filtro das tabelas de lançamento (OF/OS, aditivos). Revisão 7. Só decide o que aparece:
+ * linhas escondidas continuam com o que foi digitado.
+ */
+export function filtrarLancamento<T>(
+  linhas: readonly T[],
+  f: { busca: string; soPreenchidas: boolean; textoBusca: (l: T) => string; preenchida: (l: T) => boolean; filtroExtra?: (l: T) => boolean },
+): T[] {
+  const temBusca = f.busca.trim() !== '';
+  return linhas.filter(
+    (l) => (!f.soPreenchidas || f.preenchida(l)) && (!f.filtroExtra || f.filtroExtra(l)) && (!temBusca || casaBusca(f.textoBusca(l), f.busca)),
+  );
 }
 
 export function contadores(linhas: LinhaDoc[], ordens: LinhaOrdem[]) {

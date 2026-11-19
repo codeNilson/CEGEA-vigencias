@@ -48,6 +48,8 @@ import {
 import { gravar, irPara, loja, useLoja } from '../contexto';
 import { FormEmpresa } from './Empresas';
 import { EscolhaEmpresa } from '../componentes/EscolhaEmpresa';
+import { EscolhaBusca } from '../componentes/EscolhaBusca';
+import { TabelaLancamento } from '../componentes/TabelaLancamento';
 import { formatarObjetoAta, objetoAta } from '../../dominio/texto';
 import { FormContrato } from './ContratoTela';
 
@@ -231,6 +233,28 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
   const reeq = tipo === 'reequilibrio';
   const comPrazo = tipo === 'prazo' || tipo === 'prazo_quantidade';
   const comQtd = tipo === 'quantidade' || tipo === 'prazo_quantidade';
+  // Revisão 7: uma linha por fornecedor de cada item, agrupadas por item, com filtro por fornecedor.
+  const [fornecedor, setFornecedor] = useState('');
+  const parcelas = ata.itens.flatMap((it) => it.parcelas.map((p) => ({ it, p })));
+  type LinhaParcelaAta = (typeof parcelas)[number];
+  const nomeEmp = (id: string) => empresas.get(id)?.nome ?? '(empresa não encontrada)';
+  const fornecedores = [...new Set(parcelas.map((x) => x.p.empresaId))]
+    .map((id) => ({ id, rotulo: nomeEmp(id) }))
+    .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  const propsLancamento = {
+    linhas: parcelas,
+    chave: (x: LinhaParcelaAta) => x.p.id,
+    textoBusca: (x: LinhaParcelaAta) => `${x.it.descricao} ${x.it.unidade} ${nomeEmp(x.p.empresaId)}`,
+    grupo: (x: LinhaParcelaAta) => `${x.it.descricao}${x.it.unidade ? ` (${x.it.unidade})` : ''}`,
+    colunas: 3,
+    placeholderBusca: 'Buscar item ou fornecedor',
+    filtroExtra: fornecedor ? (x: LinhaParcelaAta) => x.p.empresaId === fornecedor : undefined,
+    controlesExtras:
+      fornecedores.length > 1 ? (
+        <EscolhaBusca valor={fornecedor} muda={setFornecedor} opcoes={fornecedores} semEscolha="Todos os fornecedores" nomePlural="fornecedores" />
+      ) : undefined,
+  };
+  const cota = (p: Parcela) => (p.tipoCota === 'cota_me' ? <span className="tag">Cota ME/EPP</span> : null);
 
   return (
     <ModalForm
@@ -308,30 +332,28 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
       {comQtd && (
         <>
           <p className="nota">Informe a nova quantidade registrada total só dos fornecedores alterados. Deixe em branco os demais.</p>
-          <table className="sub-tabela" style={{ marginBottom: 16 }}>
-            <thead>
-              <tr>
-                <th>Item</th>
+          <TabelaLancamento
+            {...propsLancamento}
+            preenchida={(x) => !!qtds[x.p.id]?.trim()}
+            cabecalho={
+              <>
                 <th>Fornecedor</th>
                 <th className="direita">Quantidade registrada</th>
                 <th style={{ width: 170 }}>Nova quantidade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ata.itens.flatMap((it) =>
-                it.parcelas.map((p) => (
-                  <tr key={p.id}>
-                    <td>{it.descricao}</td>
-                    <td>{empresas.get(p.empresaId)?.nome}</td>
-                    <td className="direita num">{formatarQuantidade(quantidadeVigenteParcela(ata, p))}</td>
-                    <td>
-                      <EntradaQuantidade valor={qtds[p.id] ?? ''} muda={(v) => setQtds({ ...qtds, [p.id]: v })} />
-                    </td>
-                  </tr>
-                )),
-              )}
-            </tbody>
-          </table>
+              </>
+            }
+            linha={({ p }) => (
+              <>
+                <td style={{ paddingLeft: 18 }}>
+                  {nomeEmp(p.empresaId)} {cota(p)}
+                </td>
+                <td className="direita num">{formatarQuantidade(quantidadeVigenteParcela(ata, p))}</td>
+                <td>
+                  <EntradaQuantidade valor={qtds[p.id] ?? ''} muda={(v) => setQtds({ ...qtds, [p.id]: v })} />
+                </td>
+              </>
+            )}
+          />
         </>
       )}
       {reeq && (
@@ -340,30 +362,28 @@ function FormAditivoAta({ ata, aoFechar }: { ata: Ata; aoFechar: () => void }) {
             Informe o novo valor unitário só dos fornecedores alterados. Deixe em branco os demais. Os novos valores valem para contratos assinados a partir do início
             dos efeitos. Contratos já existentes mantêm o valor deles: se também mudarem, registre o reequilíbrio no próprio contrato.
           </p>
-          <table className="sub-tabela" style={{ marginBottom: 16 }}>
-            <thead>
-              <tr>
-                <th>Item</th>
+          <TabelaLancamento
+            {...propsLancamento}
+            preenchida={(x) => !!valores[x.p.id]?.trim()}
+            cabecalho={
+              <>
                 <th>Fornecedor</th>
                 <th className="direita">Valor unitário atual</th>
                 <th style={{ width: 180 }}>Novo valor unitário</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ata.itens.flatMap((it) =>
-                it.parcelas.map((p) => (
-                  <tr key={p.id}>
-                    <td>{it.descricao}</td>
-                    <td>{empresas.get(p.empresaId)?.nome}</td>
-                    <td className="direita num">{formatarValorUnitario(valorParcelaEm(ata, p, inicioEfeitos))}</td>
-                    <td>
-                      <EntradaMoeda valor={valores[p.id] ?? ''} muda={(v) => setValores({ ...valores, [p.id]: v })} placeholder="0,00" />
-                    </td>
-                  </tr>
-                )),
-              )}
-            </tbody>
-          </table>
+              </>
+            }
+            linha={({ p }) => (
+              <>
+                <td style={{ paddingLeft: 18 }}>
+                  {nomeEmp(p.empresaId)} {cota(p)}
+                </td>
+                <td className="direita num">{formatarValorUnitario(valorParcelaEm(ata, p, inicioEfeitos))}</td>
+                <td>
+                  <EntradaMoeda valor={valores[p.id] ?? ''} muda={(v) => setValores({ ...valores, [p.id]: v })} placeholder="0,00" />
+                </td>
+              </>
+            )}
+          />
         </>
       )}
       <Campo rotulo="Observações">

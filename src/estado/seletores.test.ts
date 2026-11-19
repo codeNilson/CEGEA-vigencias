@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { novaAta, novaEmpresa, novoContrato } from '../dominio/fabrica';
-import { atasParaContrato, paginar, parcelasParaItemContrato } from './seletores';
+import { atasParaContrato, filtrarLancamento, paginar, parcelasParaItemContrato } from './seletores';
 import { repositorioDemonstracao } from './demo';
 import { validarArquivo, type Ata, type Colecao, type Contrato } from '../dominio/tipos';
 import { validarContrato } from '../dominio/validacoes';
@@ -8,6 +8,25 @@ import { validarContrato } from '../dominio/validacoes';
 const Q = (n: number) => n * 1000;
 const V = (n: number) => Math.round(n * 10000);
 const HOJE = '2026-11-19';
+
+describe('CA10.11 filtro das tabelas de lançamento', () => {
+  const linhas = [
+    { id: 'a', desc: 'Papel A4', forn: 'f1' },
+    { id: 'b', desc: 'Caneta azul', forn: 'f2' },
+    { id: 'c', desc: 'Pápel ofício', forn: 'f2' },
+  ];
+  const qtds: Record<string, string> = { b: '3', c: '' };
+  const base = { busca: '', soPreenchidas: false, textoBusca: (l: (typeof linhas)[number]) => l.desc, preenchida: (l: (typeof linhas)[number]) => !!qtds[l.id]?.trim() };
+  const ids = (r: typeof linhas) => r.map((l) => l.id);
+  it('sem filtro mostra tudo; busca ignora acento', () => {
+    expect(ids(filtrarLancamento(linhas, base))).toEqual(['a', 'b', 'c']);
+    expect(ids(filtrarLancamento(linhas, { ...base, busca: 'papel' }))).toEqual(['a', 'c']);
+  });
+  it('só preenchidas e filtro extra se combinam com a busca', () => {
+    expect(ids(filtrarLancamento(linhas, { ...base, soPreenchidas: true }))).toEqual(['b']);
+    expect(ids(filtrarLancamento(linhas, { ...base, filtroExtra: (l) => l.forn === 'f2', busca: 'papel' }))).toEqual(['c']);
+  });
+});
 
 describe('paginação', () => {
   const lista = Array.from({ length: 45 }, (_, i) => i + 1);

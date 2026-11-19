@@ -7,6 +7,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 ### Alterado
 - No cadastro do contrato, a ARP é escolhida num campo de busca por número ou objeto. Aparecem primeiro as ARPs vigentes que têm itens da empresa do contrato, depois as outras vigentes e, por último, as vencidas, com o vencimento de cada uma.
 - No item do contrato, o item da ARP é escolhido num campo de busca pela descrição, com unidade, cota, saldo e valor à vista. Itens sem saldo ficam no fim da lista.
+- Nas janelas de nova OF/OS e de aditivo (de contrato e de ARP), quando há muitos itens, aparecem busca por item e a opção "Só os preenchidos", e a tabela rola dentro da janela. O que já foi digitado continua valendo mesmo com o filtro.
+- No aditivo de ARP, os fornecedores aparecem agrupados por item e é possível filtrar por fornecedor, o que facilita o reequilíbrio de uma empresa só.
 
 ## [1.5.0] - 2026-11-19 (revisão 6)
 

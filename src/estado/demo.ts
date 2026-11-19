@@ -251,7 +251,7 @@ function volumeDemonstracao(empresas: Empresa[], d: (n: number) => string): Agre
   let semente = 7;
   const sorteio = (n: number) => {
     semente = (semente * 1103515245 + 12345) % 2147483648;
-    return semente % n;
+    return (semente >> 16) % n;
   };
   const Q = (n: number) => n * 1000;
   const V = (n: number) => Math.round(n * 10000);
@@ -266,7 +266,7 @@ function volumeDemonstracao(empresas: Empresa[], d: (n: number) => string): Agre
       const fornecedores = 1 + sorteio(2);
       return {
         id: `dg-a${k}-i${i}`,
-        descricao: `${produtos[(i + k) % produtos.length]} ${variantes[(i * 7 + k) % variantes.length]}`,
+        descricao: `${produtos[(i + k) % produtos.length]} ${variantes[(Math.floor(i / produtos.length) + k) % variantes.length]}`,
         unidade: ['un', 'cx', 'pct', 'm', 'kg'][i % 5],
         parcelas: Array.from({ length: fornecedores }, (_, f) => ({
           id: `dg-a${k}-i${i}-p${f}`,
