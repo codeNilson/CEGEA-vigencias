@@ -24,11 +24,12 @@ export function App() {
 
   useEffect(() => {
     (async () => {
-      if (new URLSearchParams(location.search).has('demo')) {
+      const q = new URLSearchParams(location.search);
+      if (q.has('demo')) {
         // Gancho de inspeção, só no modo demonstração (dados fictícios em memória).
         const { prepararPasta, RepositorioPastaRede } = await import('../armazenamento/pastaRede');
         Object.assign(window, { __vigencias: { loja, prepararPasta, RepositorioPastaRede } });
-        return conectar(await repositorioDemonstracao());
+        return conectar(await repositorioDemonstracao({ grande: q.get('demo') === 'grande' }));
       }
       const s = await recuperarPasta().catch(() => ({ tipo: 'nenhuma' }) as const);
       if (s.tipo === 'pronta') return conectar(s.repo);

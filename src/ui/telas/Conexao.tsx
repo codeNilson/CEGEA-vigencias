@@ -60,7 +60,7 @@ export function TelaConexao({ salva, aoConectar }: { salva: EstadoPastaSalva; ao
         )}
         <div className="conexao-rodape">
           {salva.tipo === 'precisa-permissao' ? <button onClick={() => tentar(escolherPasta)}>Escolher outra pasta</button> : <span />}
-          <button onClick={() => tentar(repositorioDemonstracao)}>Ver demonstração</button>
+          <button onClick={() => tentar(() => repositorioDemonstracao())}>Ver demonstração</button>
         </div>
       </div>
     </div>

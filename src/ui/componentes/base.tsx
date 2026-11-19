@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
+import { paginar } from '../../estado/seletores';
 import { ROTULO_SITUACAO_ORDEM, rotuloSituacao, type Situacao as SituacaoT, type SituacaoOrdem } from '../../dominio/tipos';
 import { faixaPrazo } from '../../dominio/calculos';
 import { ORGAO } from '../orgao';
@@ -325,6 +327,67 @@ export function CabecalhoImpressao({ titulo, hoje }: { titulo: string; hoje: str
       <span>
         {ORGAO.sigla} · {ORGAO.setor} · emitido em {formatarData(hoje)} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
       </span>
+    </div>
+  );
+}
+
+// ---------- Paginação (revisão 5; revisão 7: comum a todas as listas) ----------
+
+/** true enquanto o Chrome prepara a impressão (botão PDF ou Ctrl+P). */
+export function useImprimindo(): boolean {
+  const [imprimindo, setImprimindo] = useState(false);
+  useEffect(() => {
+    // flushSync: a lista inteira precisa estar na tela antes de o Chrome montar a impressão.
+    const antes = () => flushSync(() => setImprimindo(true));
+    const depois = () => setImprimindo(false);
+    window.addEventListener('beforeprint', antes);
+    window.addEventListener('afterprint', depois);
+    return () => {
+      window.removeEventListener('beforeprint', antes);
+      window.removeEventListener('afterprint', depois);
+    };
+  }, []);
+  return imprimindo;
+}
+
+/**
+ * Página atual de uma lista. Volta para a primeira página quando `chave` muda (busca, filtro).
+ * Na impressão, devolve a lista inteira.
+ */
+export function usePaginacao<T>(lista: readonly T[], porPagina: number, chave = '') {
+  const [estado, setEstado] = useState({ pagina: 1, chave });
+  const imprimindo = useImprimindo();
+  const pagina = estado.chave === chave ? estado.pagina : 1;
+  const p = paginar(lista, pagina, porPagina);
+  return {
+    itens: imprimindo ? [...lista] : p.itens,
+    paginacao: { pagina: p.pagina, total: p.total, porPagina, muda: (n: number) => setEstado({ pagina: n, chave }) },
+  };
+}
+
+export function Paginacao({ pagina, total, porPagina, muda }: { pagina: number; total: number; porPagina: number; muda: (p: number) => void }) {
+  const paginas = Math.max(1, Math.ceil(total / porPagina));
+  if (total === 0) return null;
+  const ini = (pagina - 1) * porPagina + 1;
+  const fim = Math.min(total, pagina * porPagina);
+  return (
+    <div className="paginacao">
+      <span className="num">
+        Mostrando {ini} a {fim} de {total}
+      </span>
+      {paginas > 1 && (
+        <span className="paginacao-botoes">
+          <button type="button" className="btn btn-mini" disabled={pagina <= 1} onClick={() => muda(pagina - 1)}>
+            ‹ Anterior
+          </button>
+          <span className="num">
+            Página {pagina} de {paginas}
+          </span>
+          <button type="button" className="btn btn-mini" disabled={pagina >= paginas} onClick={() => muda(pagina + 1)}>
+            Próxima ›
+          </button>
+        </span>
+      )}
     </div>
   );
 }
