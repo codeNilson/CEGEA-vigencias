@@ -358,3 +358,40 @@ Campos novos entram no schema zod com `.default(...)`. Arquivos gravados antes c
 - Empresa repetida: `nomesParecidos` compara o nome sem acentos, pontuação e sufixos societários. Aviso, não bloqueio; CNPJ igual continua bloqueado.
 - `EntradaMoeda`: máscara de centavos preenchida da direita; o texto resultante é lido por `lerValor`, sem mudar o formato gravado.
 
+## 10. Revisão 6: atualização pelo próprio sistema (19/11/2026)
+
+### 10.1 Publicação
+
+Uma tag `vX.Y.Z` dispara `.github/workflows/publicar.yml`: testes, build, `scripts/publicar.ts` e publicação em dois lugares.
+
+| Onde | O quê | Para quê |
+|---|---|---|
+| branch `publicacao`, `versao.json` | versão, data, arquivo, SHA-256, tamanho, notas das últimas 10 versões | o sistema consulta |
+| branch `publicacao`, `versoes/Vigencias-X.Y.Z.html` | o arquivo da versão, em caminho que nunca muda | o sistema baixa |
+| GitHub Release `vX.Y.Z` | notas do CHANGELOG e o arquivo anexado | pessoas |
+
+O sistema lê de `raw.githubusercontent.com`, que responde com `Access-Control-Allow-Origin: *`; por isso funciona a partir de `file://`, sem senha, desde que o repositório seja público. Links de download da Release redirecionam para outro domínio sem CORS e não servem para o sistema. O caminho por versão evita que o cache da CDN (5 min) entregue um `versao.json` novo com um HTML velho; se acontecer, a conferência do SHA-256 recusa e nada muda.
+
+### 10.2 Instalação
+
+`instalarPublicacao` (`src/atualizacao/instalar.ts`): pasta do sistema (handle guardado no IndexedDB, como a pasta de dados), download e conferência, cópia em `versoes-anteriores/`, gravação com `createWritable` (o arquivo só é trocado no `close`), registro no marcador. Só roda com `location.protocol === 'file:'` e fora da demonstração.
+
+### 10.3 Versão compartilhada
+
+`dados/_vigencias.json` ganha `versaoApp` e `versaoMinima` (campos opcionais; marcadores antigos continuam válidos). Toda janela confere a cada 2 minutos (`situacaoVersao`, `src/atualizacao/compartilhada.ts`):
+
+| Situação | Ação |
+|---|---|
+| esta versão > `versaoApp` | registra esta versão como `versaoApp` e `versaoMinima` (instalação manual ou primeira abertura) |
+| esta versão < `versaoMinima` | `loja.bloqueioVersao`: `salvar` e `excluir` recusam; faixa para recarregar; visor recarrega |
+| igual | nada |
+
+Motivo do bloqueio: o zod descarta campos desconhecidos na leitura. Uma versão antiga que salvasse um registro gravado pela nova apagaria os campos novos. Toda versão nova vira `versaoMinima`, mesmo sem mudar o formato dos dados, para a regra ser simples.
+
+Voltar para uma versão anterior: publique uma versão nova (X.Y.Z+1) com o código antigo. Abrir uma cópia de `versoes-anteriores/` funciona só para consulta, porque ela fica bloqueada para gravar.
+
+### 10.4 Riscos
+
+- Quem controla o repositório controla o código que roda nos computadores do setor e tem acesso à pasta de dados. A conta do GitHub precisa de verificação em duas etapas, e só tags publicam.
+- Primeira transição: versões até 1.4.0 não têm o atualizador. A 1.5.0 precisa ser copiada à mão uma vez.
+

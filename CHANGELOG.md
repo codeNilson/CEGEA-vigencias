@@ -2,6 +2,18 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Cada versão corresponde a uma revisão de `docs/requisitos.md`.
 
+## [1.5.0] - 2026-11-19 (revisão 6)
+
+### Adicionado
+- Atualização pelo próprio sistema: ao abrir, ele consulta se há versão nova publicada no GitHub, mostra as novidades e instala com um clique, para todos de uma vez. Sem internet, segue funcionando e tenta de novo depois.
+- Antes de instalar, o arquivo baixado é conferido (tamanho e assinatura SHA-256) e uma cópia da versão atual fica na pasta `versoes-anteriores`.
+- Janela "O que há de novo" na primeira abertura depois de cada atualização.
+- Versão do sistema na faixa de status, com consulta manual de atualizações.
+
+### Alterado
+- Quem estiver com uma versão antiga aberta recebe um aviso para recarregar e não consegue salvar até recarregar. Isso evita que a versão antiga apague campos novos dos registros.
+- O visor da TV recarrega sozinho quando o sistema é atualizado.
+
 ## [1.4.0] - 2026-11-19 (revisão 5)
 
 ### Adicionado

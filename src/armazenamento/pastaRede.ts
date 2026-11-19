@@ -66,6 +66,33 @@ export class RepositorioPastaRede implements Repositorio {
     }
   }
 
+  /** Pasta de dados escolhida (usada como ponto de partida ao escolher a pasta do sistema). */
+  get pastaDados(): FileSystemDirectoryHandle {
+    return this.raiz;
+  }
+
+  async lerMarcador(): Promise<Record<string, unknown> | null> {
+    try {
+      const f = await (await this.raiz.getFileHandle(MARCADOR)).getFile();
+      const d = JSON.parse(await f.text());
+      return d && typeof d === 'object' ? d : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async atualizarMarcador(campos: Record<string, unknown>): Promise<void> {
+    try {
+      const atual = (await this.lerMarcador()) ?? { sistema: 'Vigências', formato: FORMATO_ATUAL };
+      const h = await this.raiz.getFileHandle(MARCADOR, { create: true });
+      const w = await h.createWritable();
+      await w.write(JSON.stringify({ ...atual, ...campos }, null, 2));
+      await w.close();
+    } catch {
+      throw new ErroAcesso();
+    }
+  }
+
   async excluir(colecao: Colecao, id: string): Promise<void> {
     try {
       await (await this.pasta(colecao)).removeEntry(`${id}.json`);

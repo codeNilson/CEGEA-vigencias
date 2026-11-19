@@ -14,6 +14,7 @@ import { Inicio } from './telas/Inicio';
 import { ListaDocumentos } from './telas/ListaDocumentos';
 import { GavetaOrdem, TelaOrdens } from './telas/Ordens';
 import { Visor } from './telas/Visor';
+import { BotaoVersao, FaixaAtualizacao, ModalAtualizacao, ModalNovidades, useVerificacaoDeVersao } from './componentes/Atualizacao';
 
 const INTERVALO_VERIFICACAO = 2 * 60 * 1000;
 
@@ -77,6 +78,8 @@ function Sistema() {
     };
   }, [rota.tela]);
 
+  useVerificacaoDeVersao(rota.tela === 'visor');
+
   if (rota.tela === 'visor') return <Visor />;
 
   const demo = repo.nome.startsWith('Demonstração');
@@ -101,6 +104,7 @@ function Sistema() {
         </div>
       </header>
 
+      <FaixaAtualizacao />
       {haAlteracoes && (
         <div className="banner-alteracoes nao-imprimir">
           Outra pessoa salvou alterações na pasta de dados.
@@ -112,6 +116,7 @@ function Sistema() {
         <span>{demo ? 'Demonstração com dados fictícios: nada é gravado' : `Pasta de dados: ${repo.nome}`}</span>
         <span>{carregando ? 'lendo…' : ultima ? `atualizado às ${new Date(ultima).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}</span>
         <span className="espaco" />
+        <BotaoVersao />
         <button
           className="btn btn-leve btn-mini"
           title="Uma planilha com ARPs, itens, contratos, saldos e contatos das empresas"
@@ -150,6 +155,8 @@ function Sistema() {
       {novo === 'contrato' && <FormContrato aoFechar={() => setNovo(null)} ataInicial={rota.tela === 'ata' ? rota.id : undefined} />}
       <GavetaOrdem />
       <ModalConflito />
+      <ModalAtualizacao />
+      <ModalNovidades />
       <Avisos />
     </>
   );

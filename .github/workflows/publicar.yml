@@ -1,0 +1,62 @@
+name: Publicar versão
+
+# Ao enviar uma tag v1.2.3, publica a versão para o sistema se atualizar sozinho (revisão 6):
+# branch `publicacao` (versao.json + versoes/Vigencias-1.2.3.html, lidos via raw.githubusercontent.com)
+# e uma GitHub Release com as notas do CHANGELOG e o arquivo anexado.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Montar publicação
+        run: npm run publicar -- "${GITHUB_REF_NAME}"
+
+      - name: Atualizar branch publicacao
+        run: |
+          set -e
+          VERSAO="${GITHUB_REF_NAME#v}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin publicacao >/dev/null; then
+            git fetch --depth 1 origin publicacao
+            git worktree add ../pub origin/publicacao
+            git -C ../pub checkout -B publicacao
+          else
+            git worktree add --detach ../pub
+            git -C ../pub checkout --orphan publicacao
+            git -C ../pub rm -rf --quiet .
+          fi
+          mkdir -p ../pub/versoes
+          cp publicacao/versao.json ../pub/versao.json
+          cp publicacao/versoes/*.html ../pub/versoes/
+          printf '# Publicação do Vigências\n\nGerado pelo CI. Não edite: o sistema lê `versao.json` daqui para se atualizar.\n' > ../pub/README.md
+          git -C ../pub add -A
+          git -C ../pub commit -m "Publica versão ${VERSAO}"
+          git -C ../pub push origin publicacao
+
+      - name: Criar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSAO="${GITHUB_REF_NAME#v}"
+          gh release create "${GITHUB_REF_NAME}" "publicacao/versoes/Vigencias-${VERSAO}.html#Vigencias.html" \
+            --title "Vigências ${VERSAO}" --notes-file "publicacao/notas-${VERSAO}.md" --verify-tag

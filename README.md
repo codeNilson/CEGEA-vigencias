@@ -18,6 +18,7 @@ O sistema é **um único arquivo HTML**, aberto no Google Chrome a partir de uma
 - **Empresas**: busca, paginação, contato e aviso de cadastro repetido.
 - **Edição concorrente segura**: versão por arquivo, mesclagem em três vias e tela para resolver conflitos.
 - **Exportação**: planilha .xlsx por tela, PDF pela impressão e exportação completa dos dados em uma planilha independente.
+- **Atualização pelo próprio sistema**: avisa quando há versão nova, mostra as novidades e instala com um clique para todos.
 
 | Ficha da ARP | Visor para TV |
 |---|---|
@@ -25,7 +26,7 @@ O sistema é **um único arquivo HTML**, aberto no Google Chrome a partir de uma
 
 ## Instalação na pasta de rede
 
-1. Baixe `Vigencias.html` (gerado por `npm run build` ou pelo artefato da última execução do CI).
+1. Baixe `Vigencias.html` da [última versão publicada](https://github.com/codeNilson/CEGEA-vigencias/releases/latest).
 2. Copie para a pasta de rede do setor e crie, ao lado dele, uma pasta vazia chamada `dados`.
 3. Abra `Vigencias.html` no **Google Chrome**, clique em "Escolher pasta de dados" e escolha a pasta `dados`. Na primeira vez o sistema cria `_vigencias.json` e as subpastas.
 4. Cada colega faz o passo 3 uma vez no próprio computador. Depois, o Chrome pede só um clique de confirmação.
@@ -40,9 +41,21 @@ O sistema é **um único arquivo HTML**, aberto no Google Chrome a partir de uma
     contratos\<id>.json
 ```
 
-Para atualizar o sistema, substitua apenas `Vigencias.html`. Os dados não são tocados, e arquivos gravados por versões anteriores continuam válidos.
+Os dados não são tocados por atualizações, e arquivos gravados por versões anteriores continuam válidos.
 
 Para conhecer sem gravar nada, use "Conhecer com dados fictícios" na tela inicial ou abra `Vigencias.html?demo`.
+
+### Atualizações
+
+A partir da versão 1.5.0, o sistema consulta o GitHub ao abrir e a cada 6 horas. Quando há versão nova, aparece a faixa **Nova versão disponível**:
+
+1. Clique em **Ver novidades e atualizar**, leia as notas e clique em **Atualizar agora**.
+2. Na primeira vez, em cada computador, escolha a pasta onde fica o `Vigencias.html` (a pasta acima de `dados`).
+3. O sistema baixa, confere o arquivo, guarda uma cópia da versão atual em `versoes-anteriores` e recarrega.
+
+Basta uma pessoa atualizar: o arquivo é o mesmo para todos. Quem estiver com o sistema aberto recebe o aviso para recarregar e não consegue salvar até recarregar; a TV recarrega sozinha. Sem internet, nada muda, e a consulta é repetida depois. A versão em uso aparece na faixa de status.
+
+Da 1.4.0 (ou anterior) para a 1.5.0, a troca é manual uma única vez: copie o `Vigencias.html` da versão 1.5.0 por cima do atual.
 
 ### Visor para TV
 
@@ -66,6 +79,18 @@ npm run typecheck  # verificação de tipos
 npm run build      # gera dist/Vigencias.html, arquivo único sem dependências externas
 npm run preview    # serve o build para conferência
 ```
+
+### Publicar uma versão
+
+1. Registre as mudanças em `CHANGELOG.md`, numa seção `## [X.Y.Z] - AAAA-MM-DD`. Os itens dessa seção são as notas que os usuários veem.
+2. Atualize `version` no `package.json` para `X.Y.Z`.
+3. Faça commit, crie a tag e envie:
+   ```
+   git tag vX.Y.Z
+   git push origin main vX.Y.Z
+   ```
+
+O workflow **Publicar versão** roda testes e build, recusa a tag se não bater com o `package.json` ou se faltar a seção no CHANGELOG, atualiza a branch `publicacao` (de onde o sistema lê) e cria a Release. Em até 6 horas, ou ao reabrir, os computadores do setor veem a versão nova. Para voltar atrás, publique uma versão nova com o código anterior.
 
 O `index.html` da raiz é só o modelo de desenvolvimento e não funciona aberto direto.
 

@@ -6,6 +6,7 @@ Revisão 2 (18/11/2026): termos de situação, regra para vencidos, visor de TV,
 Revisão 3 (18/11/2026): modo lista no Início e no visor, contato das empresas, exportação completa dos dados.
 Revisão 4 (19/11/2026): data de início da vigência deixou de ser obrigatória no cadastro da ARP.
 Revisão 5 (19/11/2026): reequilíbrio na ARP, máscara de valores, ordenação escolhível, objeto da ARP em maiúsculas, busca e paginação de empresas, escolha de empresa com busca e aviso de empresa repetida.
+Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas de versão e proteção contra versão antiga aberta.
 
 ## 1. Objetivo
 
@@ -239,10 +240,25 @@ Para garantir que os dados possam ser levados para fora do sistema a qualquer mo
 - CA21.3: A escolha fica guardada no computador, separada para ARPs e contratos.
 - CA21.4: A escolha da ARP no cadastro do contrato e a exportação completa usam a ordem por número.
 
+### RF22. Atualização do sistema
+
+O sistema se atualiza a partir das versões publicadas no repositório público do GitHub. Como todos abrem o mesmo arquivo na pasta de rede, uma atualização instalada por qualquer pessoa vale para todos.
+
+- CA22.1: Cada arquivo do sistema tem um número de versão, exibido na faixa de status. Clicar nele mostra a versão em uso e permite consultar atualizações.
+- CA22.2: Ao abrir, a cada 6 horas e quando a internet volta, o sistema consulta a última versão publicada. Sem internet ou com o GitHub fora do ar, não mostra erro: continua funcionando e tenta de novo depois.
+- CA22.3: Havendo versão mais nova, aparece uma faixa "Nova versão X disponível". O botão abre as notas de todas as versões entre a atual e a nova, com "Atualizar agora" e "Depois".
+- CA22.4: "Atualizar agora" baixa o arquivo, confere tamanho e SHA-256 com o publicado, guarda uma cópia da versão atual em `versoes-anteriores/` (na pasta do sistema), grava o arquivo novo por cima do atual e recarrega. Qualquer falha antes de gravar o arquivo novo não altera nada e mostra o motivo.
+- CA22.5: Na primeira atualização de cada computador, o sistema pede a pasta onde fica o arquivo (a pasta acima de `dados`). Nas seguintes, usa a mesma.
+- CA22.6: A versão instalada fica registrada na pasta de dados. Quem estiver com uma versão mais antiga aberta vê a faixa "O sistema foi atualizado para a versão X" com o botão "Recarregar", e não consegue salvar nem excluir até recarregar. Isso impede que a versão antiga apague campos que não conhece.
+- CA22.7: O visor de TV recarrega sozinho quando o sistema é atualizado (no máximo uma vez a cada 10 minutos).
+- CA22.8: Na primeira abertura de cada computador depois de uma atualização, aparece "O que há de novo" com as notas das versões que ele ainda não tinha visto.
+- CA22.9: Um arquivo do sistema copiado à mão para a pasta de rede também é registrado como versão em uso ao abrir.
+- CA22.10: Na demonstração e fora da pasta de rede, o sistema mostra as versões, mas não instala.
+
 ## 5. Requisitos não funcionais
 
 - RNF01: Funciona no Google Chrome, aberto a partir da pasta de rede, sem instalar nada nas máquinas.
-- RNF02: Funciona sem internet, desde que a pasta de rede esteja acessível.
+- RNF02: Funciona sem internet, desde que a pasta de rede esteja acessível. A internet só é usada para consultar e baixar atualizações (RF22).
 - RNF03: Interface, mensagens e exportações em português, datas no formato dd/mm/aaaa e valores em R$.
 - RNF04: Painel abre em até 3 segundos com 200 atas, 500 contratos e 2000 OF/OS.
 - RNF05: Os dados ficam em arquivo dentro da pasta de rede, coberto pela cópia de segurança que a rede já faz.

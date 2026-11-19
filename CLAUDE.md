@@ -21,6 +21,7 @@ npm run dev        # Vite, abre /index.html?demo (dados fictícios em memória)
 npm test           # Vitest
 npm run typecheck  # tsc --noEmit
 npm run build      # typecheck + build + renomeia dist/index.html para dist/Vigencias.html
+npm run publicar   # (CI) monta publicacao/ a partir do dist e do CHANGELOG
 ```
 
 Antes de dar uma tarefa por concluída: `npm run typecheck && npm test && npm run build`. Mudança de interface: conferir no navegador com `?demo` (ver "Conferir no navegador").
@@ -89,6 +90,15 @@ Vitest, em `src/**/*.test.ts`. Teste regra de domínio com funções puras; loja
 
 `npm run dev` e abrir `http://localhost:5173/?demo`. A demonstração tem ARPs, contratos, OF/OS em várias situações, um reequilíbrio na ARP 018/2026 e 51 empresas. Nada é gravado. O visor fica em `#/visor`.
 
+## Versões e atualização automática
+
+O sistema se atualiza sozinho a partir da branch `publicacao` deste repositório público (RF22, `src/atualizacao/`, `docs/design.md` seção 10).
+- Versão = `version` do `package.json`, embutida no build como `__VERSAO_APP__`.
+- Toda versão publicada precisa de seção `## [X.Y.Z] - AAAA-MM-DD` no `CHANGELOG.md`, escrita para o usuário final (é o que aparece em "O que há de novo"). Itens curtos, em português, sem jargão técnico.
+- Publicar = commit com versão e CHANGELOG atualizados, depois `git tag vX.Y.Z && git push origin main vX.Y.Z`. Não publique sem o usuário pedir: a tag instala a versão para o setor inteiro.
+- Não mude `FONTE_ATUALIZACAO`, o formato de `versao.json` (`PublicacaoSchema`) nem o nome da branch `publicacao` sem manter compatibilidade: versões já instaladas leem desse endereço e desse formato.
+- Toda versão nova bloqueia gravação das anteriores (`versaoMinima`). Não remova isso.
+
 ## Ao mudar requisitos
 
 1. Atualize `docs/requisitos.md` (nova linha de revisão no topo, CA novos ou alterados).
@@ -101,4 +111,4 @@ Vitest, em `src/**/*.test.ts`. Teste regra de domínio com funções puras; loja
 - Não grave dados de exemplo ou reais no repositório. A pasta `dados/` está no `.gitignore`.
 - Não troque a pasta de rede por servidor, banco ou serviço em nuvem.
 - Não adicione dependência que precise de rede em tempo de execução.
-- Não edite `dist/`: é gerado pelo build.
+- Não edite `dist/` nem a branch `publicacao`: são gerados pelo build e pelo CI.

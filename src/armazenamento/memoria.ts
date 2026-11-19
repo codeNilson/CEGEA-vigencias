@@ -34,6 +34,16 @@ export class RepositorioMemoria implements Repositorio {
     this.arquivos.delete(this.chave(colecao, id));
   }
 
+  marcador: Record<string, unknown> = { sistema: 'Vigências', formato: 1 };
+
+  async lerMarcador(): Promise<Record<string, unknown> | null> {
+    return { ...this.marcador };
+  }
+
+  async atualizarMarcador(campos: Record<string, unknown>): Promise<void> {
+    this.marcador = { ...this.marcador, ...campos };
+  }
+
   /** Gravação direta, simulando outro computador (testes). */
   gravarBruto(colecao: Colecao, id: string, texto: string) {
     this.arquivos.set(this.chave(colecao, id), { texto, modificadoEm: this.relogio++ });

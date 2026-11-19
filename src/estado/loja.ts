@@ -55,6 +55,8 @@ export interface EstadoLoja {
   haAlteracoes: boolean;
   conflito: (PedidoConflito & { responder: (r: RespostaConflito) => void }) | null;
   avisos: Aviso[];
+  /** Mensagem que impede gravar: esta janela tem uma versão do sistema mais antiga que a da pasta (revisão 6). */
+  bloqueioVersao: string | null;
 
   conectar(repo: Repositorio): Promise<void>;
   desconectar(): void;
@@ -64,6 +66,7 @@ export interface EstadoLoja {
   excluir(registro: Agregado, verificar?: (estado: EstadoLoja) => string[]): Promise<ResultadoSalvar>;
   avisar(tipo: Aviso['tipo'], texto: string): void;
   dispensarAviso(id: number): void;
+  definirBloqueioVersao(msg: string | null): void;
 }
 
 export interface OpcoesLoja {
@@ -154,6 +157,7 @@ export function criarLoja(opcoes: OpcoesLoja = {}) {
       haAlteracoes: false,
       conflito: null,
       avisos: [],
+      bloqueioVersao: null,
 
       async conectar(repo) {
         set({ repo });
@@ -210,6 +214,8 @@ export function criarLoja(opcoes: OpcoesLoja = {}) {
       async salvar(registro, validar) {
         const repo = get().repo;
         if (!repo) return { ok: false, erros: ['Nenhuma pasta de dados conectada.'] };
+        const bloqueio = get().bloqueioVersao;
+        if (bloqueio) return { ok: false, erros: [bloqueio] };
         const col = COLECAO_DO_REGISTRO[registro.registro];
         const id = registro.id;
 
@@ -290,6 +296,8 @@ export function criarLoja(opcoes: OpcoesLoja = {}) {
       async excluir(registro, verificar) {
         const repo = get().repo;
         if (!repo) return { ok: false, erros: ['Nenhuma pasta de dados conectada.'] };
+        const bloqueio = get().bloqueioVersao;
+        if (bloqueio) return { ok: false, erros: [bloqueio] };
         const col = COLECAO_DO_REGISTRO[registro.registro];
         try {
           if (verificar) {
@@ -315,6 +323,10 @@ export function criarLoja(opcoes: OpcoesLoja = {}) {
 
       dispensarAviso(id) {
         set({ avisos: get().avisos.filter((a) => a.id !== id) });
+      },
+
+      definirBloqueioVersao(msg) {
+        if (get().bloqueioVersao !== msg) set({ bloqueioVersao: msg });
       },
     };
   });

@@ -17,6 +17,10 @@ export interface Repositorio {
   ler(colecao: Colecao, id: string): Promise<Lido | null>;
   gravar(colecao: Colecao, id: string, dados: unknown): Promise<void>;
   excluir(colecao: Colecao, id: string): Promise<void>;
+  /** Conteúdo de _vigencias.json (marcador da pasta, com a versão do sistema). Null se não der para ler. */
+  lerMarcador(): Promise<Record<string, unknown> | null>;
+  /** Junta os campos ao marcador e grava. */
+  atualizarMarcador(campos: Record<string, unknown>): Promise<void>;
 }
 
 export const COLECOES: Colecao[] = ['empresas', 'atas', 'contratos'];

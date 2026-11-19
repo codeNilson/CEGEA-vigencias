@@ -24,3 +24,6 @@ desktop.ini
 npm-debug.log*
 .env
 .env.*
+
+# Gerado por scripts/publicar.ts no CI
+publicacao/
