@@ -90,12 +90,58 @@ Vitest, em `src/**/*.test.ts`. Teste regra de domínio com funções puras; loja
 
 `npm run dev` e abrir `http://localhost:5173/?demo`. A demonstração tem ARPs, contratos, OF/OS em várias situações, um reequilíbrio na ARP 018/2026 e 51 empresas. Nada é gravado. O visor fica em `#/visor`.
 
+## Fluxo de trabalho
+
+Todas as alterações são feitas por agente, a pedido do Denilson. Alterar e publicar são etapas separadas: juntar uma mudança na `main` não instala nada no setor. Só uma tag `vX.Y.Z` publica.
+
+### Branches
+
+| Branch | Uso |
+|---|---|
+| `main` | sempre funcionando (CI verde). Acumula mudanças ainda não publicadas. Nunca receba commit direto. |
+| `claude/<assunto-curto>` | uma por pedido (ex.: `claude/filtro-por-empresa`). Sai da `main` atualizada. |
+| `publicacao` | gerada pelo CI. Não mexa. |
+
+### A cada pedido de alteração
+
+1. `git checkout main && git pull`, depois `git checkout -b claude/<assunto>`.
+2. Implemente, com testes. Rode `npm run typecheck && npm test && npm run build` e confira no navegador se mexeu em tela.
+3. Se a mudança for perceptível para quem usa o sistema, acrescente um item na seção `## [Não publicado]` do `CHANGELOG.md` (ver "Como escrever o CHANGELOG"). Mudança só interna (testes, refatoração, docs) não entra.
+4. Atualize `docs/requisitos.md`, `docs/design.md` e `README.md` conforme "Ao mudar requisitos".
+5. Commits pequenos, mensagem em português no imperativo ("Adiciona filtro por empresa na lista de contratos").
+6. `git push -u origin claude/<assunto>` e abra o PR com `gh pr create` (título curto, corpo com o que mudou e como foi verificado). Onde o `gh` não tiver GraphQL (sessões na nuvem), use a API REST: `gh api repos/codeNilson/CEGEA-vigencias/pulls -f title=... -f head=claude/<assunto> -f base=main -f body=...`.
+7. Espere o CI passar. **Só junte na `main` quando o Denilson aprovar** ("pode juntar", "aprovado"). Junte com `gh pr merge --squash --delete-branch` (ou, via REST, `gh api -X PUT repos/codeNilson/CEGEA-vigencias/pulls/<n>/merge -f merge_method=squash` e apague a branch).
+8. Diga ao Denilson o que ficou acumulado para a próxima versão (itens de `[Não publicado]`).
+
+Pedido pequeno e sem risco, com o Denilson dizendo que pode ir direto: ainda assim use branch e PR, mas pode juntar assim que o CI passar.
+
+### Publicar uma versão (só quando o Denilson pedir: "publica", "lança a versão")
+
+1. Parta da `main` atualizada, numa branch `claude/versao-X.Y.Z`.
+2. Escolha o número pelo conteúdo de `[Não publicado]` e diga qual escolheu:
+   - correção apenas: X.Y.**Z+1**
+   - funcionalidade nova ou mudança visível: X.**Y+1**.0
+   - mudança que exige ação de todos ou quebra compatibilidade de dados: **X+1**.0.0 (evite; os dados precisam continuar compatíveis)
+3. No `CHANGELOG.md`, troque `## [Não publicado]` por `## [X.Y.Z] - AAAA-MM-DD (revisão N)` e crie uma nova `## [Não publicado]` vazia acima. Revise o texto das notas.
+4. Atualize `version` no `package.json` (e o `package-lock.json` com `npm install --package-lock-only`).
+5. PR, CI verde, junte na `main`.
+6. Na `main` atualizada: `git tag vX.Y.Z && git push origin vX.Y.Z`. O workflow "Publicar versão" faz o resto e recusa tag fora da `main`, sem seção no CHANGELOG ou diferente do `package.json`.
+7. Confira com `gh run list` que a publicação passou e informe ao Denilson.
+
+Se `[Não publicado]` estiver vazio, não há o que publicar: avise em vez de criar versão.
+
+### Como escrever o CHANGELOG
+
+É o texto que as pessoas do setor leem em "O que há de novo". Escreva para elas, não para desenvolvedores.
+- Seções: `### Adicionado`, `### Alterado`, `### Corrigido`, `### Removido`.
+- Um item por mudança, uma ou duas frases, dizendo o que a pessoa vê ou passa a poder fazer. Nomeie telas e botões como aparecem na interface.
+- Sem nomes de arquivo, função ou biblioteca. Sem travessão.
+- Bom: "A lista de contratos pode ser filtrada por empresa." Ruim: "Adiciona prop `empresaId` em ListaDocumentos."
+
 ## Versões e atualização automática
 
 O sistema se atualiza sozinho a partir da branch `publicacao` deste repositório público (RF22, `src/atualizacao/`, `docs/design.md` seção 10).
-- Versão = `version` do `package.json`, embutida no build como `__VERSAO_APP__`.
-- Toda versão publicada precisa de seção `## [X.Y.Z] - AAAA-MM-DD` no `CHANGELOG.md`, escrita para o usuário final (é o que aparece em "O que há de novo"). Itens curtos, em português, sem jargão técnico.
-- Publicar = commit com versão e CHANGELOG atualizados, depois `git tag vX.Y.Z && git push origin main vX.Y.Z`. Não publique sem o usuário pedir: a tag instala a versão para o setor inteiro.
+- Versão = `version` do `package.json`, embutida no build como `__VERSAO_APP__`. Na `main`, entre publicações, o número ainda é o da última versão: builds da `main` não devem ser copiados para a pasta de rede.
 - Não mude `FONTE_ATUALIZACAO`, o formato de `versao.json` (`PublicacaoSchema`) nem o nome da branch `publicacao` sem manter compatibilidade: versões já instaladas leem desse endereço e desse formato.
 - Toda versão nova bloqueia gravação das anteriores (`versaoMinima`). Não remova isso.
 

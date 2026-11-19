@@ -112,3 +112,13 @@ describe('CA22.2 a CA22.4 consulta e download', () => {
     await expect(baixarPublicacao(p)).rejects.toThrow(/Nada foi alterado/);
   });
 });
+
+describe('CHANGELOG com seção [Não publicado]', () => {
+  it('a seção não publicada não vira versão nem entra nas notas', () => {
+    const n = lerChangelog('# Changelog\n\n## [Não publicado]\n\n### Adicionado\n- ainda não saiu\n\n## [1.5.0] - 2026-11-19\n### Adicionado\n- publicado');
+    expect(n.map((x) => x.versao)).toEqual(['1.5.0']);
+    expect(n[0].secoes[0].itens).toEqual(['publicado']);
+    const m = lerChangelog('## [1.5.0]\n- a\n## [Não publicado]\n- b');
+    expect(m[0].secoes[0].itens).toEqual(['a']);
+  });
+});

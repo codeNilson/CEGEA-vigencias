@@ -21,6 +21,11 @@ export function lerChangelog(texto: string): NotaVersao[] {
       notas.push(atual);
       continue;
     }
+    if (/^##\s/.test(linha)) {
+      // Outro cabeçalho de nível 2 (ex.: "## [Não publicado]"): não pertence a nenhuma versão.
+      atual = null;
+      continue;
+    }
     if (!atual) continue;
     const sec = /^###\s+(.+)$/.exec(linha);
     if (sec) {
