@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { novaAta, novaEmpresa, novoContrato } from '../dominio/fabrica';
-import { atasParaContrato, filtrarLancamento, paginar, parcelasParaItemContrato } from './seletores';
+import { atasParaContrato, filtrarDocumentos, filtrarLancamento, filtrarOrdens, linhasDocumentos, paginar, parcelasParaItemContrato, todasOrdens } from './seletores';
 import { repositorioDemonstracao } from './demo';
 import { validarArquivo, type Ata, type Colecao, type Contrato } from '../dominio/tipos';
 import { validarContrato } from '../dominio/validacoes';
@@ -8,6 +8,34 @@ import { validarContrato } from '../dominio/validacoes';
 const Q = (n: number) => n * 1000;
 const V = (n: number) => Math.round(n * 10000);
 const HOJE = '2026-11-19';
+
+describe('CA21.5 e CA10.12 filtros das listas de contratos e OF/OS', () => {
+  const a = novaEmpresa({ nome: 'Água Pura Ltda' });
+  const b = novaEmpresa({ nome: 'Beta ME' });
+  const ordem = (id: string, numero: string, dataEmissao: string, dataEntrega: string | null) => ({ id, numero, dataEmissao, prazoDias: 5, tipoPrazo: 'corridos' as const, dataEntrega, itens: [], observacoes: '' });
+  const c1 = novoContrato({ numero: '010/2026', empresaId: a.id, tipo: 'material', objeto: 'Água mineral', dataInicio: '2026-01-01', dataFim: '2027-01-01', ordens: [ordem('o1', 'OF 001/2026', '2026-11-18', null), ordem('o2', 'OF 002/2026', '2026-02-01', '2026-02-03')] });
+  const c2 = novoContrato({ numero: '005/2025', empresaId: b.id, tipo: 'servico', objeto: 'Limpeza', dataInicio: '2025-01-01', dataFim: '2026-01-01', ordens: [ordem('o3', 'OS 003/2025', '2025-11-01', null)] });
+  const c3 = novoContrato({ numero: '020/2026', empresaId: a.id, tipo: 'servico', objeto: 'Manutenção', dataInicio: '2026-03-01', dataFim: '2027-06-01' });
+  const estado = { atas: new Map(), contratos: new Map([c1, c2, c3].map((c) => [c.id, c])), empresas: new Map([a, b].map((e) => [e.id, e])), hoje: HOJE };
+  const docs = linhasDocumentos(estado);
+  const nums = (r: Array<{ numero: string }>) => r.map((l) => l.numero);
+
+  it('contratos: empresa, modalidade e situação se combinam; busca ignora acento', () => {
+    expect(nums(filtrarDocumentos(docs, { filtro: 'todos', empresaId: a.id }))).toEqual(['010/2026', '020/2026']);
+    expect(nums(filtrarDocumentos(docs, { filtro: 'todos', empresaId: a.id, modalidade: 'servico' }))).toEqual(['020/2026']);
+    expect(nums(filtrarDocumentos(docs, { filtro: 'vigentes' }))).toEqual(['010/2026', '020/2026']);
+    expect(nums(filtrarDocumentos(docs, { filtro: 'todos', busca: 'agua mineral' }))).toEqual(['010/2026']);
+    expect(nums(filtrarDocumentos(docs, { filtro: 'todos', ordem: 'numero' }))).toEqual(['020/2026', '010/2026', '005/2025']);
+  });
+  it('OF/OS: empresa e busca sem acento', () => {
+    const ordens = todasOrdens(estado);
+    const ids = (r: typeof ordens) => r.map((o) => o.ordem.id).sort();
+    expect(ids(filtrarOrdens(ordens, { filtro: 'todas', empresaId: a.id }))).toEqual(['o1', 'o2']);
+    expect(ids(filtrarOrdens(ordens, { filtro: 'abertas' }))).toEqual(['o1', 'o3']);
+    expect(ids(filtrarOrdens(ordens, { filtro: 'atrasada' }))).toEqual(['o3']);
+    expect(ids(filtrarOrdens(ordens, { filtro: 'todas', busca: 'agua pura' }))).toEqual(['o1', 'o2']);
+  });
+});
 
 describe('CA10.11 filtro das tabelas de lançamento', () => {
   const linhas = [
