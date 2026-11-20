@@ -545,3 +545,16 @@ html.modo-visor, html.modo-visor body { background: var(--petroleo); overflow: h
 .notas-versao h5 { margin: 10px 0 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-2); }
 .notas-versao ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 .notas-versao code { font-family: inherit; font-weight: 700; background: var(--cinza-claro); padding: 0 4px; border-radius: 3px; }
+
+/* Revisão 7: tabelas de lançamento nos modais (OF/OS, aditivos) */
+.lancamento { margin-bottom: 16px; }
+.lancamento-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
+.lancamento-filtros .busca { flex: 1 1 200px; max-width: 300px; }
+.lancamento-filtros .escolha-busca { flex: 0 1 260px; }
+.lancamento-filtros .marcar { display: flex; gap: 6px; align-items: center; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.lancamento-contagem { margin-left: auto; font-size: 12.5px; color: var(--texto-3); font-weight: 600; }
+.lancamento-rolagem { max-height: 46vh; overflow-y: auto; border-bottom: 1px solid var(--linha); }
+.lancamento-rolagem thead th { position: sticky; top: 0; z-index: 1; background: var(--superficie); }
+.sub-tabela tr.grupo td { background: #faf8f5; font-weight: 800; color: var(--petroleo); padding-top: 9px; }
+.lancamento-oculto { margin: 6px 0 0; color: var(--laranja-escuro); font-weight: 600; }
+@media print { .lancamento-rolagem { max-height: none; overflow: visible; } }
