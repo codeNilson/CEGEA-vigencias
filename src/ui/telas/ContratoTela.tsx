@@ -43,6 +43,7 @@ import {
   EntradaNumero,
   EntradaQuantidade,
   ModalForm,
+  Paginacao,
   Segmentado,
   Prazo,
   Situacao,
@@ -50,6 +51,8 @@ import {
   TagTipo,
   cls,
   useConfirmacao,
+  useImprimindo,
+  usePaginacao,
 } from '../componentes/base';
 import { gravar, irPara, loja, useLoja, useOrdemAberta } from '../contexto';
 import type { EstadoLoja } from '../../estado/loja';
@@ -58,7 +61,10 @@ import { EscolhaEmpresa } from '../componentes/EscolhaEmpresa';
 import { EscolhaBusca, type OpcaoBusca } from '../componentes/EscolhaBusca';
 import { TabelaLancamento } from '../componentes/TabelaLancamento';
 import { objetoAta } from '../../dominio/texto';
-import { atasParaContrato, parcelasParaItemContrato } from '../../estado/seletores';
+import { atasParaContrato, filtrarItensContrato, parcelasParaItemContrato, separarOrdensPorVigencia } from '../../estado/seletores';
+import { LIMITE_FILTRO_LANCAMENTO } from '../componentes/TabelaLancamento';
+
+const POR_PAGINA_FICHA = 20;
 
 const validar = (r: unknown, e: EstadoLoja) => {
   const c = r as Contrato;
@@ -606,6 +612,15 @@ export function ContratoTela({ id }: { id: string }) {
   const [modal, setModal] = useState<ModalAberto>(null);
   const [historico, setHistorico] = useState<string | null>(null);
   const { pedir, elemento } = useConfirmacao();
+  // Revisão 7: busca nos itens, OF/OS de vigências anteriores recolhidas e paginação. Na impressão, tudo.
+  const [buscaItens, setBuscaItens] = useState('');
+  const [verAnteriores, setVerAnteriores] = useState(false);
+  const imprimindo = useImprimindo();
+  const itensFiltrados = filtrarItensContrato(c?.itens ?? [], imprimindo ? '' : buscaItens);
+  const pagItens = usePaginacao(itensFiltrados, POR_PAGINA_FICHA, buscaItens);
+  const ordensSeparadas = c ? separarOrdensPorVigencia(c, hoje) : { atuais: [], anteriores: [] };
+  const ordensVisiveis = verAnteriores || imprimindo ? [...ordensSeparadas.atuais, ...ordensSeparadas.anteriores] : ordensSeparadas.atuais;
+  const pagOrdens = usePaginacao(ordensVisiveis, POR_PAGINA_FICHA, String(verAnteriores));
 
   if (!c)
     return (
@@ -627,7 +642,6 @@ export function ContratoTela({ id }: { id: string }) {
   const sigla = rotuloOrdem(c);
   const encerrado = !!c.encerramento;
   const aditivos = [...c.aditivos].sort((a, b) => a.inicioEfeitos.localeCompare(b.inicioEfeitos) || a.dataAssinatura.localeCompare(b.dataAssinatura));
-  const ordens = [...c.ordens].sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao));
   const faixa = s === 'vigente' && dias <= 30 ? 'f-critico' : s === 'vigente' && dias <= 90 ? 'f-atencao' : '';
 
   const removerDe = (campo: 'aditivos' | 'ordens' | 'itens', alvoId: string, msg: string) => async () => {
@@ -740,7 +754,13 @@ export function ContratoTela({ id }: { id: string }) {
       <div className="secao">
         <h2>Itens e saldo</h2>
         <span className="linha" />
+        {c.itens.length > 0 && <span className="sub">{c.itens.length}</span>}
       </div>
+      {c.itens.length > LIMITE_FILTRO_LANCAMENTO && (
+        <div className="filtros">
+          <input className="entrada busca" placeholder="Buscar item" value={buscaItens} onChange={(e) => setBuscaItens(e.target.value)} />
+        </div>
+      )}
       <div className="tabela-caixa">
         {c.itens.length === 0 ? (
           <div className="vazio">Nenhum item. Use “+ Item” para cadastrar{ata ? ` a partir da ARP ${ata.numero}` : ''}.</div>
@@ -759,7 +779,14 @@ export function ContratoTela({ id }: { id: string }) {
                 </tr>
               </thead>
               <tbody>
-                {c.itens.map((it) => {
+                {itensFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="fraco">
+                      Nenhum item com “{buscaItens.trim()}”.
+                    </td>
+                  </tr>
+                )}
+                {pagItens.itens.map((it) => {
                   const q = quantidadeItemEm(c, it.id, hoje);
                   const v = valorUnitarioEm(c, it.id, hoje);
                   const saldo = saldoItem(c, it.id, hoje);
@@ -821,15 +848,29 @@ export function ContratoTela({ id }: { id: string }) {
           </>
         )}
       </div>
+      <Paginacao {...pagItens.paginacao} soComVariasPaginas />
 
       <div className="secao">
         <h2>{c.tipo === 'material' ? 'Ordens de fornecimento' : 'Ordens de serviço'}</h2>
         <span className="linha" />
         <span className="sub">clique numa ordem para ver o detalhe</span>
+        {ordensSeparadas.anteriores.length > 0 && (
+          <div className="acoes">
+            <button className="btn btn-mini" onClick={() => setVerAnteriores(!verAnteriores)}>
+              {verAnteriores
+                ? 'Ocultar vigências anteriores'
+                : `Mostrar ${ordensSeparadas.anteriores.length} de vigências anteriores`}
+            </button>
+          </div>
+        )}
       </div>
       <div className="tabela-caixa">
-        {ordens.length === 0 ? (
-          <div className="vazio">Nenhuma {sigla} emitida{c.tipo === 'servico' ? ' (contratos de serviço podem não ter OS)' : ''}.</div>
+        {ordensVisiveis.length === 0 ? (
+          <div className="vazio">
+            {c.ordens.length === 0
+              ? `Nenhuma ${sigla} emitida${c.tipo === 'servico' ? ' (contratos de serviço podem não ter OS)' : ''}.`
+              : `Nenhuma ${sigla} emitida nesta vigência, desde ${formatarData(inicioVigencia)}.`}
+          </div>
         ) : (
           <table className="tabela">
             <thead>
@@ -844,7 +885,7 @@ export function ContratoTela({ id }: { id: string }) {
               </tr>
             </thead>
             <tbody>
-              {ordens.map((o) => {
+              {pagOrdens.itens.map((o) => {
                 const so = situacaoOrdem(o, hoje);
                 const anterior = periodoDaData(c, o.dataEmissao) !== inicioVigencia;
                 return (
@@ -883,6 +924,7 @@ export function ContratoTela({ id }: { id: string }) {
           </table>
         )}
       </div>
+      <Paginacao {...pagOrdens.paginacao} soComVariasPaginas />
 
       <div className="secao">
         <h2>Aditivos</h2>
