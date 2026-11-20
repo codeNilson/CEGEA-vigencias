@@ -8,6 +8,7 @@ import {
   filtrarItensContrato,
   filtrarLancamento,
   filtrarOrdens,
+  limitar,
   linhasDocumentos,
   paginar,
   parcelasParaItemContrato,
@@ -125,6 +126,18 @@ describe('CA10.11 filtro das tabelas de lançamento', () => {
   it('só preenchidas e filtro extra se combinam com a busca', () => {
     expect(ids(filtrarLancamento(linhas, { ...base, soPreenchidas: true }))).toEqual(['b']);
     expect(ids(filtrarLancamento(linhas, { ...base, filtroExtra: (l) => l.forn === 'f2', busca: 'papel' }))).toEqual(['c']);
+  });
+});
+
+describe('CA13.7 limite de cartões no Início', () => {
+  const lista = Array.from({ length: 10 }, (_, i) => i);
+  it('mostra os primeiros e conta os ocultos', () => {
+    expect(limitar(lista, 6, false)).toEqual({ visiveis: [0, 1, 2, 3, 4, 5], ocultos: 4 });
+  });
+  it('com "ver todos", ou sobrando só um, mostra tudo sem botão', () => {
+    expect(limitar(lista, 6, true)).toEqual({ visiveis: lista, ocultos: 0 });
+    expect(limitar(lista.slice(0, 7), 6, false)).toEqual({ visiveis: lista.slice(0, 7), ocultos: 0 });
+    expect(limitar([], 6, false)).toEqual({ visiveis: [], ocultos: 0 });
   });
 });
 
