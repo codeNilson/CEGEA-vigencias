@@ -4,7 +4,7 @@ import { novaEmpresa } from '../../dominio/fabrica';
 import type { Empresa } from '../../dominio/tipos';
 import { validarEmpresa } from '../../dominio/validacoes';
 import { dependentesDaEmpresa } from '../../dominio/dependencias';
-import { Campo, Entrada, ModalForm, useConfirmacao } from '../componentes/base';
+import { Campo, Entrada, ModalForm, Paginacao, useConfirmacao, usePaginacao } from '../componentes/base';
 import { gravar, loja, useLoja } from '../contexto';
 
 /** Empresas já cadastradas que parecem ser a mesma (nome parecido ou mesmo CNPJ). RF04 revisão 5. */
@@ -101,33 +101,6 @@ export function FormEmpresa({
 
 const POR_PAGINA = 20;
 
-export function Paginacao({ pagina, total, porPagina, muda }: { pagina: number; total: number; porPagina: number; muda: (p: number) => void }) {
-  const paginas = Math.max(1, Math.ceil(total / porPagina));
-  if (total === 0) return null;
-  const ini = (pagina - 1) * porPagina + 1;
-  const fim = Math.min(total, pagina * porPagina);
-  return (
-    <div className="paginacao">
-      <span className="num">
-        Mostrando {ini} a {fim} de {total}
-      </span>
-      {paginas > 1 && (
-        <span className="paginacao-botoes">
-          <button type="button" className="btn btn-mini" disabled={pagina <= 1} onClick={() => muda(pagina - 1)}>
-            ‹ Anterior
-          </button>
-          <span className="num">
-            Página {pagina} de {paginas}
-          </span>
-          <button type="button" className="btn btn-mini" disabled={pagina >= paginas} onClick={() => muda(pagina + 1)}>
-            Próxima ›
-          </button>
-        </span>
-      )}
-    </div>
-  );
-}
-
 export function TelaEmpresas() {
   const empresas = useLoja((e) => e.empresas);
   const atas = useLoja((e) => e.atas);
@@ -135,12 +108,17 @@ export function TelaEmpresas() {
   const [editando, setEditando] = useState<Empresa | null | 'nova'>(null);
   const { pedir, elemento } = useConfirmacao();
   const [busca, setBusca] = useState('');
-  const [pagina, setPagina] = useState(1);
   const todas = useMemo(() => [...empresas.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), [empresas]);
   const filtradas = busca.trim() ? todas.filter((e) => casaBusca(`${e.nome} ${e.cnpj ?? ''} ${(e.cnpj ?? '').replace(/\D/g, '')} ${e.email}`, busca)) : todas;
-  const paginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
-  const pag = Math.min(pagina, paginas);
-  const lista = filtradas.slice((pag - 1) * POR_PAGINA, pag * POR_PAGINA);
+  const { itens: lista, paginacao } = usePaginacao(filtradas, POR_PAGINA, busca);
+  // Contagens calculadas uma vez para todas as empresas, não a cada linha.
+  const usos = useMemo(() => {
+    const nContratos = new Map<string, number>();
+    const nParcelas = new Map<string, number>();
+    for (const c of contratos.values()) nContratos.set(c.empresaId, (nContratos.get(c.empresaId) ?? 0) + 1);
+    for (const a of atas.values()) for (const i of a.itens) for (const p of i.parcelas) nParcelas.set(p.empresaId, (nParcelas.get(p.empresaId) ?? 0) + 1);
+    return { nContratos, nParcelas };
+  }, [atas, contratos]);
 
   return (
     <>
@@ -156,7 +134,7 @@ export function TelaEmpresas() {
           className="entrada busca"
           placeholder="Buscar nome, CNPJ ou e-mail"
           value={busca}
-          onChange={(e) => { setBusca(e.target.value); setPagina(1); }}
+          onChange={(e) => setBusca(e.target.value)}
           style={{ flexBasis: 340 }}
         />
       </div>
@@ -178,8 +156,8 @@ export function TelaEmpresas() {
             </thead>
             <tbody>
               {lista.map((e) => {
-                const nContratos = [...contratos.values()].filter((c) => c.empresaId === e.id).length;
-                const nParcelas = [...atas.values()].flatMap((a) => a.itens.flatMap((i) => i.parcelas)).filter((p) => p.empresaId === e.id).length;
+                const nContratos = usos.nContratos.get(e.id) ?? 0;
+                const nParcelas = usos.nParcelas.get(e.id) ?? 0;
                 return (
                   <tr key={e.id}>
                     <td>{e.nome}</td>
@@ -213,7 +191,7 @@ export function TelaEmpresas() {
           </table>
         )}
       </div>
-      <Paginacao pagina={pag} total={filtradas.length} porPagina={POR_PAGINA} muda={setPagina} />
+      <Paginacao {...paginacao} />
       {editando && <FormEmpresa empresa={editando === 'nova' ? undefined : editando} aoFechar={() => setEditando(null)} />}
       {elemento}
     </>

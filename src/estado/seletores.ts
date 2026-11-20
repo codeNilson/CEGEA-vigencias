@@ -5,15 +5,16 @@ import {
   dataFimVigenteContrato,
   diasRestantes,
   faixaPrazo,
+  saldoParcela,
   situacaoAta,
   situacaoContrato,
   valorOrdem,
 } from '../dominio/calculos';
 import { somarDias } from '../dominio/datas';
 import { dataLimiteOrdem, ordemEmAlerta, situacaoOrdem } from '../dominio/prazos';
-import type { Contrato, FaixaPrazo, Ordem, Situacao, SituacaoOrdem } from '../dominio/tipos';
+import type { Ata, Contrato, FaixaPrazo, ItemAta, Ordem, Parcela, Situacao, SituacaoOrdem } from '../dominio/tipos';
 import type { EstadoLoja } from './loja';
-import { objetoAta } from '../dominio/texto';
+import { compararNumeroDoc, objetoAta } from '../dominio/texto';
 
 type Base = Pick<EstadoLoja, 'atas' | 'contratos' | 'empresas' | 'hoje'>;
 
@@ -126,6 +127,74 @@ export function ordensEmAlerta(e: Pick<EstadoLoja, 'contratos' | 'empresas' | 'h
   const r: LinhaOrdem[] = [];
   for (const c of e.contratos.values()) for (const o of c.ordens) if (ordemEmAlerta(o, e.hoje)) r.push(linhaOrdem(c, o, e));
   return r.sort((a, b) => a.limite.localeCompare(b.limite));
+}
+
+// ---------- Listas grandes (revisão 7) ----------
+
+export interface Pagina<T> {
+  itens: T[];
+  /** Página efetiva, já limitada ao intervalo válido. */
+  pagina: number;
+  paginas: number;
+  total: number;
+}
+
+/** Recorte de uma página (começa em 1). Página fora do intervalo vai para a mais próxima. */
+export function paginar<T>(lista: readonly T[], pagina: number, porPagina: number): Pagina<T> {
+  const paginas = Math.max(1, Math.ceil(lista.length / porPagina));
+  const p = Math.min(Math.max(1, Math.floor(pagina) || 1), paginas);
+  return { itens: lista.slice((p - 1) * porPagina, p * porPagina), pagina: p, paginas, total: lista.length };
+}
+
+export type GrupoAtaContrato = 'empresa' | 'vigentes' | 'vencidas';
+
+export interface OpcaoAtaContrato {
+  ata: Ata;
+  grupo: GrupoAtaContrato;
+  situacao: Situacao;
+  vencimento: string;
+  /** Quantos itens da ARP têm a empresa do contrato como fornecedora. */
+  itensDaEmpresa: number;
+}
+
+/**
+ * RF06 revisão 7: ARPs para escolher no contrato. Primeiro as vigentes em que a empresa do contrato
+ * é fornecedora, depois as outras vigentes e, no fim, as vencidas. Dentro do grupo, por número.
+ */
+export function atasParaContrato(atas: Iterable<Ata>, empresaId: string, hoje: string): OpcaoAtaContrato[] {
+  const ordemGrupo: Record<GrupoAtaContrato, number> = { empresa: 0, vigentes: 1, vencidas: 2 };
+  const r: OpcaoAtaContrato[] = [];
+  for (const ata of atas) {
+    const situacao = situacaoAta(ata, hoje);
+    const itensDaEmpresa = empresaId ? ata.itens.filter((it) => it.parcelas.some((p) => p.empresaId === empresaId)).length : 0;
+    const grupo: GrupoAtaContrato = situacao !== 'vigente' ? 'vencidas' : itensDaEmpresa > 0 ? 'empresa' : 'vigentes';
+    r.push({ ata, grupo, situacao, vencimento: dataFimVigenteAta(ata), itensDaEmpresa });
+  }
+  return r.sort((a, b) => ordemGrupo[a.grupo] - ordemGrupo[b.grupo] || compararNumeroDoc(a.ata.numero, b.ata.numero));
+}
+
+export interface OpcaoParcela {
+  item: ItemAta;
+  parcela: Parcela;
+  /** Saldo da ARP para este contrato, descontando os outros itens dele que usam a mesma parcela. */
+  saldo: number;
+}
+
+/**
+ * Itens da ARP que a empresa do contrato fornece, para o item do contrato. Os que têm saldo vêm
+ * primeiro, na ordem da ARP; os sem saldo vão para o fim.
+ */
+export function parcelasParaItemContrato(ata: Ata, contrato: Contrato, contratos: Iterable<Contrato>, itemEditadoId?: string): OpcaoParcela[] {
+  const lista = [...contratos];
+  const r: OpcaoParcela[] = [];
+  for (const item of ata.itens)
+    for (const parcela of item.parcelas) {
+      if (parcela.empresaId !== contrato.empresaId) continue;
+      const usadoAqui = contrato.itens.filter((x) => x.parcelaId === parcela.id && x.id !== itemEditadoId).reduce((s, x) => s + x.quantidade, 0);
+      r.push({ item, parcela, saldo: saldoParcela(ata, parcela, lista, contrato.id) - usadoAqui });
+    }
+  const comSaldo = r.filter((o) => o.saldo > 0);
+  return [...comSaldo, ...r.filter((o) => o.saldo <= 0)];
 }
 
 export function contadores(linhas: LinhaDoc[], ordens: LinhaOrdem[]) {
