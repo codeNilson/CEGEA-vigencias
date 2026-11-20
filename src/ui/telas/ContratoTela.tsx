@@ -56,6 +56,7 @@ import type { EstadoLoja } from '../../estado/loja';
 import { FormEmpresa } from './Empresas';
 import { EscolhaEmpresa } from '../componentes/EscolhaEmpresa';
 import { EscolhaBusca, type OpcaoBusca } from '../componentes/EscolhaBusca';
+import { TabelaLancamento } from '../componentes/TabelaLancamento';
 import { objetoAta } from '../../dominio/texto';
 import { atasParaContrato, parcelasParaItemContrato } from '../../estado/seletores';
 
@@ -378,34 +379,39 @@ function FormAditivoContrato({ contrato, aoFechar }: { contrato: Contrato; aoFec
             {tipo === 'valor' ? 'Informe a nova quantidade e/ou o novo valor unitário' : 'Informe o novo valor unitário'} dos itens alterados, valendo a partir do
             início dos efeitos. Deixe em branco os demais.
           </p>
-          <table className="sub-tabela" style={{ marginBottom: 16 }}>
-            <thead>
-              <tr>
+          <TabelaLancamento
+            linhas={contrato.itens}
+            chave={(it) => it.id}
+            textoBusca={(it) => `${it.descricao} ${it.unidade}`}
+            preenchida={(it) => !!(alt[it.id]?.v.trim() || (tipo === 'valor' && alt[it.id]?.q.trim()))}
+            colunas={tipo === 'valor' ? 5 : 4}
+            cabecalho={
+              <>
                 <th>Item</th>
                 <th className="direita">Quantidade em {formatarData(ref)}</th>
                 <th className="direita">Valor unitário em {formatarData(ref)}</th>
                 {tipo === 'valor' && <th style={{ width: 150 }}>Nova quantidade</th>}
                 <th style={{ width: 160 }}>Novo valor unitário</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contrato.itens.map((it) => (
-                <tr key={it.id}>
-                  <td>{it.descricao}</td>
-                  <td className="direita num">{formatarQuantidade(quantidadeItemEm(contrato, it.id, ref))}</td>
-                  <td className="direita num">{formatarValorUnitario(valorUnitarioEm(contrato, it.id, ref))}</td>
-                  {tipo === 'valor' && (
-                    <td>
-                      <EntradaQuantidade valor={alt[it.id]?.q ?? ''} muda={(q) => setAlt({ ...alt, [it.id]: { v: alt[it.id]?.v ?? '', q } })} />
-                    </td>
-                  )}
+              </>
+            }
+            linha={(it) => (
+              <>
+                <td>
+                  {it.descricao} <span className="fraco pequeno">{it.unidade}</span>
+                </td>
+                <td className="direita num">{formatarQuantidade(quantidadeItemEm(contrato, it.id, ref))}</td>
+                <td className="direita num">{formatarValorUnitario(valorUnitarioEm(contrato, it.id, ref))}</td>
+                {tipo === 'valor' && (
                   <td>
-                    <EntradaMoeda valor={alt[it.id]?.v ?? ''} muda={(v) => setAlt({ ...alt, [it.id]: { q: alt[it.id]?.q ?? '', v } })} />
+                    <EntradaQuantidade valor={alt[it.id]?.q ?? ''} muda={(q) => setAlt({ ...alt, [it.id]: { v: alt[it.id]?.v ?? '', q } })} />
                   </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                )}
+                <td>
+                  <EntradaMoeda valor={alt[it.id]?.v ?? ''} muda={(v) => setAlt({ ...alt, [it.id]: { q: alt[it.id]?.q ?? '', v } })} />
+                </td>
+              </>
+            )}
+          />
         </>
       )}
       <Campo rotulo="Observações">
@@ -489,28 +495,31 @@ export function FormOrdem({ contrato, ordem, aoFechar }: { contrato: Contrato; o
           <div className="calculado">{limite ? formatarData(limite) : '-'}</div>
         </Campo>
       </div>
-      <table className="sub-tabela" style={{ marginBottom: 16 }}>
-        <thead>
-          <tr>
+      <TabelaLancamento
+        linhas={contrato.itens}
+        chave={(it) => it.id}
+        textoBusca={(it) => `${it.descricao} ${it.unidade}`}
+        preenchida={(it) => !!qtds[it.id]?.trim()}
+        colunas={3}
+        cabecalho={
+          <>
             <th>Item</th>
             <th className="direita">Saldo disponível</th>
             <th style={{ width: 170 }}>Quantidade nesta {sigla}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {contrato.itens.map((it) => (
-            <tr key={it.id}>
-              <td>
-                {it.descricao} <span className="fraco pequeno">{it.unidade}</span>
-              </td>
-              <td className="direita num">{emissaoOk ? formatarQuantidade(saldoItem(contrato, it.id, dataEmissao, ordem?.id)) : '-'}</td>
-              <td>
-                <EntradaQuantidade valor={qtds[it.id] ?? ''} muda={(v) => setQtds({ ...qtds, [it.id]: v })} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </>
+        }
+        linha={(it) => (
+          <>
+            <td>
+              {it.descricao} <span className="fraco pequeno">{it.unidade}</span>
+            </td>
+            <td className="direita num">{emissaoOk ? formatarQuantidade(saldoItem(contrato, it.id, dataEmissao, ordem?.id)) : '-'}</td>
+            <td>
+              <EntradaQuantidade valor={qtds[it.id] ?? ''} muda={(v) => setQtds({ ...qtds, [it.id]: v })} />
+            </td>
+          </>
+        )}
+      />
       <div className="grade g4">
         <Campo rotulo="Data de entrega" dica="Preencha quando for entregue.">
           <EntradaData valor={dataEntrega} muda={setDataEntrega} />

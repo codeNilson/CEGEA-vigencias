@@ -7,7 +7,7 @@ Revisão 3 (18/11/2026): modo lista no Início e no visor, contato das empresas,
 Revisão 4 (19/11/2026): data de início da vigência deixou de ser obrigatória no cadastro da ARP.
 Revisão 5 (19/11/2026): reequilíbrio na ARP, máscara de valores, ordenação escolhível, objeto da ARP em maiúsculas, busca e paginação de empresas, escolha de empresa com busca e aviso de empresa repetida.
 Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas de versão e proteção contra versão antiga aberta.
-Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca.
+Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos.
 
 ## 1. Objetivo
 
@@ -140,6 +140,7 @@ Campos: número, contrato, data de emissão, itens e quantidades, prazo de entre
 - CA10.8: As listas de OF/OS mostram itens e quantidades sem abrir edição.
 - CA10.9: Clicar numa OF/OS (em qualquer tela) abre o detalhe da própria OF/OS: itens, quantidades, valores, prazo, situação, contrato e empresa, com ações de registrar entrega e editar.
 - CA10.10: Existe uma lista de todas as OF/OS, com filtro por situação (pendente, atrasada, entregue).
+- CA10.11: Nas tabelas em que se digitam quantidades ou valores por item (OF/OS, aditivo de contrato e aditivo de ARP), com mais de 8 linhas aparecem busca por item, a opção "Só os preenchidos" e a contagem de linhas preenchidas, e a tabela rola com o cabeçalho fixo. O filtro só esconde linhas: o que foi digitado em linhas escondidas continua valendo e é salvo, com aviso. No aditivo de ARP, as linhas ficam agrupadas por item e há filtro por fornecedor.
 
 ### RF11. Feriados
 
