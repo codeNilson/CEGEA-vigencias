@@ -365,9 +365,22 @@ export function usePaginacao<T>(lista: readonly T[], porPagina: number, chave = 
   };
 }
 
-export function Paginacao({ pagina, total, porPagina, muda }: { pagina: number; total: number; porPagina: number; muda: (p: number) => void }) {
+export function Paginacao({
+  pagina,
+  total,
+  porPagina,
+  muda,
+  soComVariasPaginas,
+}: {
+  pagina: number;
+  total: number;
+  porPagina: number;
+  muda: (p: number) => void;
+  /** Não mostra nada quando tudo cabe numa página (fichas da ARP e do contrato). */
+  soComVariasPaginas?: boolean;
+}) {
   const paginas = Math.max(1, Math.ceil(total / porPagina));
-  if (total === 0) return null;
+  if (total === 0 || (soComVariasPaginas && paginas === 1)) return null;
   const ini = (pagina - 1) * porPagina + 1;
   const fim = Math.min(total, pagina * porPagina);
   return (
