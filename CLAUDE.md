@@ -88,7 +88,7 @@ Vitest, em `src/**/*.test.ts`. Teste regra de domínio com funções puras; loja
 
 ## Conferir no navegador
 
-`npm run dev` e abrir `http://localhost:5173/?demo`. A demonstração tem ARPs, contratos, OF/OS em várias situações, um reequilíbrio na ARP 018/2026 e 51 empresas. Nada é gravado. O visor fica em `#/visor`.
+`npm run dev` e abrir `http://localhost:5173/?demo`. A demonstração tem ARPs, contratos, OF/OS em várias situações, um reequilíbrio na ARP 018/2026 e 51 empresas. Nada é gravado. O visor fica em `#/visor`. Para conferir listas longas (busca, paginação), use `?demo=grande`: 40 ARPs a mais (a 100/2025 tem 120 itens), 150 contratos e centenas de OF/OS. Toda tela nova deve continuar usável com ela.
 
 ## Fluxo de trabalho
 

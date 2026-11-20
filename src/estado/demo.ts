@@ -1,10 +1,14 @@
 import { hojeISO, somarDias } from '../dominio/datas';
 import { novaAta, novaEmpresa, novoContrato } from '../dominio/fabrica';
-import type { Agregado } from '../dominio/tipos';
+import type { Agregado, Ata, Contrato, Empresa, ItemAta, ItemContrato, Ordem } from '../dominio/tipos';
 import { RepositorioMemoria } from '../armazenamento/memoria';
 
-/** Dados fictícios para conhecer o sistema sem tocar na pasta de rede. Datas relativas a hoje. */
-export async function repositorioDemonstracao(): Promise<RepositorioMemoria> {
+/**
+ * Dados fictícios para conhecer o sistema sem tocar na pasta de rede. Datas relativas a hoje.
+ * Com `grande`, acrescenta volume (dezenas de ARPs, centenas de contratos e OF/OS) para conferir
+ * busca e paginação: abra com `?demo=grande`.
+ */
+export async function repositorioDemonstracao(opcoes: { grande?: boolean } = {}): Promise<RepositorioMemoria> {
   const repo = new RepositorioMemoria('Demonstração (dados fictícios, nada é gravado na rede)');
   const h = hojeISO();
   const d = (n: number) => somarDias(h, n);
@@ -234,9 +238,86 @@ export async function repositorioDemonstracao(): Promise<RepositorioMemoria> {
   );
 
   const todos: Agregado[] = [...extras, alfa, beta, clima, luz, limpa, agua, ataPapel, ataClima, ataEletrica, ataLimpeza, ataAgua, cPapel, cPapel2, cClima, cLimpeza, cEletrica, cEncerrado, cAgua];
+  if (opcoes.grande) todos.push(...volumeDemonstracao(extras, d));
   for (const r of todos) {
     const col = r.registro === 'empresa' ? 'empresas' : r.registro === 'ata' ? 'atas' : 'contratos';
     await repo.gravar(col, r.id, { ...r, versao: 1, atualizadoEm: new Date().toISOString() });
   }
   return repo;
+}
+
+/** Volume extra e determinístico para a demonstração grande. */
+function volumeDemonstracao(empresas: Empresa[], d: (n: number) => string): Agregado[] {
+  let semente = 7;
+  const sorteio = (n: number) => {
+    semente = (semente * 1103515245 + 12345) % 2147483648;
+    return semente % n;
+  };
+  const Q = (n: number) => n * 1000;
+  const V = (n: number) => Math.round(n * 10000);
+  const objetos = ['Material de expediente', 'Material de limpeza', 'Material elétrico', 'Material hidráulico', 'Equipamentos de informática', 'Mobiliário', 'Gêneros alimentícios', 'Uniformes', 'Ferramentas', 'Material gráfico', 'EPI', 'Material de construção'];
+  const produtos = ['Cabo flexível', 'Tomada 2P+T', 'Disjuntor', 'Tubo PVC', 'Joelho 90°', 'Registro de gaveta', 'Cadeira giratória', 'Mesa de reunião', 'Toner', 'Mouse óptico', 'Teclado ABNT2', 'Detergente', 'Desinfetante', 'Saco de lixo', 'Luva nitrílica', 'Capacete', 'Cimento CP II', 'Areia média', 'Tinta acrílica', 'Envelope ofício'];
+  const variantes = ['pequeno', 'médio', 'grande', '1,5 mm', '2,5 mm', '10 A', '20 A', '25 mm', '50 mm', 'azul', 'branco', 'preto', '5 L', '100 L', 'tamanho M', 'tamanho G'];
+  const atas: Ata[] = [];
+  for (let k = 0; k < 40; k++) {
+    const fim = d(-240 + k * 14);
+    const nItens = k === 0 ? 120 : 3 + sorteio(12);
+    const itens: ItemAta[] = Array.from({ length: nItens }, (_, i) => {
+      const fornecedores = 1 + sorteio(2);
+      return {
+        id: `dg-a${k}-i${i}`,
+        descricao: `${produtos[(i + k) % produtos.length]} ${variantes[(i * 7 + k) % variantes.length]}`,
+        unidade: ['un', 'cx', 'pct', 'm', 'kg'][i % 5],
+        parcelas: Array.from({ length: fornecedores }, (_, f) => ({
+          id: `dg-a${k}-i${i}-p${f}`,
+          empresaId: empresas[(k * 3 + i % 4 + f * 11) % empresas.length].id,
+          tipoCota: f === 0 ? ('ampla' as const) : ('cota_me' as const),
+          quantidade: Q(500 + sorteio(20) * 50),
+          valorUnitario: V(5 + sorteio(400) + sorteio(100) / 100),
+        })),
+      };
+    });
+    atas.push(novaAta({ numero: `${String(100 + k).padStart(3, '0')}/${k < 20 ? 2025 : 2026}`, tema: objetos[k % objetos.length], dataInicio: somarDias(fim, -365), dataFim: fim, itens }));
+  }
+  const contratos: Contrato[] = [];
+  for (let i = 0; i < 150; i++) {
+    const ata = atas[i % atas.length];
+    const empresaId = ata.itens[i % ata.itens.length].parcelas[0].empresaId;
+    const parcelas = ata.itens.flatMap((it) => it.parcelas.filter((p) => p.empresaId === empresaId).map((p) => ({ it, p })));
+    const escolhidas = ata === atas[0] ? parcelas.slice(0, 40) : parcelas.slice(0, 1 + sorteio(5));
+    const inicio = somarDias(ata.dataInicio, 10 + sorteio(200));
+    const itens: ItemContrato[] = escolhidas.map(({ it, p }, j) => ({ id: `dg-c${i}-i${j}`, parcelaId: p.id, descricao: it.descricao, unidade: it.unidade, quantidade: Q(50), valorUnitario: p.valorUnitario }));
+    const ordens: Ordem[] = [];
+    const nOrdens = sorteio(7);
+    for (let o = 0; o < nOrdens; o++) {
+      const emissao = somarDias(inicio, 5 + o * 30);
+      if (emissao > d(0)) break;
+      ordens.push({
+        id: `dg-c${i}-o${o}`,
+        numero: `${i % 3 ? 'OF' : 'OS'} ${String(500 + i * 7 + o).padStart(3, '0')}/2026`,
+        dataEmissao: emissao,
+        prazoDias: 5 + sorteio(10),
+        tipoPrazo: sorteio(2) ? 'uteis' : 'corridos',
+        dataEntrega: sorteio(4) ? somarDias(emissao, 3 + sorteio(8)) : null,
+        itens: itens.slice(0, 1 + sorteio(Math.max(1, itens.length))).map((x) => ({ itemId: x.id, quantidade: Q(1 + sorteio(3)) })),
+        observacoes: '',
+      });
+    }
+    contratos.push(
+      novoContrato({
+        numero: `${String(200 + i).padStart(3, '0')}/2026`,
+        empresaId,
+        tipo: 'material',
+        objeto: `Aquisição de ${ata.tema.toLowerCase()}`,
+        ataId: ata.id,
+        dataInicio: inicio,
+        dataFim: somarDias(inicio, 365),
+        gestor: 'Ana Lúcia Moreira',
+        fiscal: 'Rafael Nogueira',
+        itens,
+        ordens,
+      }),
+    );
+  }
+  return [...atas, ...contratos];
 }
