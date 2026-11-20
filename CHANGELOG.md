@@ -4,6 +4,10 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ## [Não publicado]
 
+### Alterado
+- No cadastro do contrato, a ARP é escolhida num campo de busca por número ou objeto. Aparecem primeiro as ARPs vigentes que têm itens da empresa do contrato, depois as outras vigentes e, por último, as vencidas, com o vencimento de cada uma.
+- No item do contrato, o item da ARP é escolhido num campo de busca pela descrição, com unidade, cota, saldo e valor à vista. Itens sem saldo ficam no fim da lista.
+
 ## [1.5.0] - 2026-11-19 (revisão 6)
 
 ### Adicionado

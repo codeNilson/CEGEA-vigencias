@@ -7,6 +7,7 @@ Revisão 3 (18/11/2026): modo lista no Início e no visor, contato das empresas,
 Revisão 4 (19/11/2026): data de início da vigência deixou de ser obrigatória no cadastro da ARP.
 Revisão 5 (19/11/2026): reequilíbrio na ARP, máscara de valores, ordenação escolhível, objeto da ARP em maiúsculas, busca e paginação de empresas, escolha de empresa com busca e aviso de empresa repetida.
 Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas de versão e proteção contra versão antiga aberta.
+Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca.
 
 ## 1. Objetivo
 
@@ -83,7 +84,8 @@ Empresa: nome, CNPJ (opcional), e-mail (opcional, aceita mais de um separado por
 - CA05.6: A escolha da empresa (no contrato e no fornecedor do item da ARP) é um campo de busca: digita-se parte do nome ou do CNPJ, sem acento e sem diferenciar maiúsculas, e escolhe-se com o mouse ou com setas e Enter. A última opção cadastra uma nova empresa já com o texto digitado.
 - CA05.7: Ao cadastrar empresa, o sistema confere se ela já existe: CNPJ igual é bloqueado; nome parecido (ignorando acentos, pontuação e sufixos como LTDA, ME, EPP, EIRELI, S/A) gera um aviso com as empresas encontradas, a opção "Usar esta" (quando o cadastro veio de dentro da ARP ou do contrato) e a opção "É outra empresa, cadastrar mesmo assim". Sem uma das duas, não salva.
 - CA05.8: O CNPJ, quando informado, precisa ter dígitos verificadores válidos e é gravado no formato 00.000.000/0000-00.
-- CA05.9: A aba Empresas tem busca por nome, CNPJ ou e-mail e mostra 20 empresas por página.
+- CA05.9: A aba Empresas tem busca por nome, CNPJ ou e-mail e mostra 20 empresas por página. Na impressão, a lista sai inteira.
+- CA05.10: A escolha da ARP no contrato é um campo de busca por número ou objeto, como o da empresa (CA05.6), com a opção "Sem ARP" no topo. As ARPs aparecem em grupos: primeiro as vigentes em que a empresa do contrato é fornecedora, depois as outras vigentes e, no fim, as vencidas; dentro do grupo, por número (mais recentes primeiro). Cada opção mostra o vencimento e quantos itens da ARP são da empresa. Se a ARP escolhida não tem itens da empresa, ou está vencida, o campo avisa.
 
 - CA05.1: É possível criar, editar e excluir um contrato.
 - CA05.2: Não é possível salvar sem número, empresa, tipo, data de início e data fim.
@@ -96,6 +98,7 @@ Empresa: nome, CNPJ (opcional), e-mail (opcional, aceita mais de um separado por
 - CA06.1: Em contrato vinculado a ata, os itens são escolhidos entre as parcelas da ata cujo fornecedor é a empresa do contrato. Valor unitário vem da parcela.
 - CA06.2: Em contrato sem ata, os itens são cadastrados no próprio contrato (descrição, unidade, quantidade, valor unitário).
 - CA06.3: O contrato exibe o valor total (soma de quantidade x valor unitário vigente de cada item).
+- CA06.4: A escolha do item da ARP é um campo de busca pela descrição. Cada opção mostra unidade, cota, saldo disponível na ARP e valor unitário. Os itens com saldo vêm primeiro; os sem saldo ficam num grupo no fim.
 
 ### RF07. Saldo do contrato
 

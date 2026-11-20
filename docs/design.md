@@ -354,7 +354,7 @@ Campos novos entram no schema zod com `.default(...)`. Arquivos gravados antes c
 ### 9.3 Interface
 
 - Ordenação das listas (`compararNumeroDoc`, em `src/dominio/texto.ts`): NÚMERO/ANO decrescente; fora do padrão no fim. Preferência por computador em `localStorage` (`usePreferencia`), igual ao modo lista/mês.
-- `EscolhaEmpresa`: combobox com busca sem acento, lista renderizada em portal (`position: fixed`) para não ser cortada pelo modal, até 50 resultados visíveis.
+- `EscolhaEmpresa`: combobox com busca sem acento, lista renderizada em portal (`position: fixed`) para não ser cortada pelo modal, até 50 resultados visíveis. Desde a revisão 7 é uma especialização de `EscolhaBusca` (ver 11).
 - Empresa repetida: `nomesParecidos` compara o nome sem acentos, pontuação e sufixos societários. Aviso, não bloqueio; CNPJ igual continua bloqueado.
 - `EntradaMoeda`: máscara de centavos preenchida da direita; o texto resultante é lido por `lerValor`, sem mudar o formato gravado.
 
@@ -395,3 +395,11 @@ Voltar para uma versão anterior: publique uma versão nova (X.Y.Z+1) com o cód
 - Quem controla o repositório controla o código que roda nos computadores do setor e tem acesso à pasta de dados. A conta do GitHub precisa de verificação em duas etapas, e só tags publicam.
 - Primeira transição: versões até 1.4.0 não têm o atualizador. A 1.5.0 precisa ser copiada à mão uma vez.
 
+## 11. Revisão 7: muitos registros (19/11/2026)
+
+O setor acumula ARPs, contratos, itens e OF/OS. Nenhuma tela pode depender de a lista ser curta. Escala esperada: centenas de registros, não milhares; busca e paginação bastam, sem virtualização.
+
+- `EscolhaBusca` (`src/ui/componentes/EscolhaBusca.tsx`): combobox genérico. Opções com rótulo, linha secundária, texto de busca e grupo; opção opcional de limpar ("Sem ARP") e de cadastrar nova. Até 50 opções visíveis, com aviso das que ficaram de fora. Substitui todo `<select>` cuja lista cresce com os dados.
+- Ordem e grupos das opções ficam em funções puras em `src/estado/seletores.ts` (`atasParaContrato`, `parcelasParaItemContrato`), testadas sem React.
+- Paginação: `paginar` (puro, em `seletores.ts`), `usePaginacao` e `Paginacao` (em `base.tsx`). A página volta para 1 quando a chave (busca, filtros) muda. Na impressão (`beforeprint`, com `flushSync`) a lista sai inteira e a barra de paginação some.
+- Demonstração com volume: `?demo=grande` acrescenta 40 ARPs (uma com 120 itens), 150 contratos e centenas de OF/OS.

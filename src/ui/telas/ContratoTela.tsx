@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   acharParcela,
   dataFimVigenteContrato,
@@ -8,7 +8,6 @@ import {
   periodoDaData,
   quantidadeItemEm,
   saldoItem,
-  saldoParcela,
   situacaoContrato,
   valorOrdem,
   valorTotalContrato,
@@ -43,7 +42,6 @@ import {
   EntradaMoeda,
   EntradaNumero,
   EntradaQuantidade,
-  Escolha,
   ModalForm,
   Segmentado,
   Prazo,
@@ -57,7 +55,9 @@ import { gravar, irPara, loja, useLoja, useOrdemAberta } from '../contexto';
 import type { EstadoLoja } from '../../estado/loja';
 import { FormEmpresa } from './Empresas';
 import { EscolhaEmpresa } from '../componentes/EscolhaEmpresa';
-import { compararNumeroDoc, objetoAta } from '../../dominio/texto';
+import { EscolhaBusca, type OpcaoBusca } from '../componentes/EscolhaBusca';
+import { objetoAta } from '../../dominio/texto';
+import { atasParaContrato, parcelasParaItemContrato } from '../../estado/seletores';
 
 const validar = (r: unknown, e: EstadoLoja) => {
   const c = r as Contrato;
@@ -72,6 +72,7 @@ const rotuloOrdem = (c: Contrato) => (c.tipo === 'material' ? 'OF' : 'OS');
 export function FormContrato({ contrato, aoFechar, ataInicial }: { contrato?: Contrato; aoFechar: () => void; ataInicial?: string }) {
   const empresas = useLoja((e) => e.empresas);
   const atas = useLoja((e) => e.atas);
+  const hoje = useLoja((e) => e.hoje);
   const base = contrato ?? novoContrato({ ataId: ataInicial ?? null });
   const [f, setF] = useState({
     numero: base.numero,
@@ -87,7 +88,27 @@ export function FormContrato({ contrato, aoFechar, ataInicial }: { contrato?: Co
   });
   const [novaEmpresa, setNovaEmpresa] = useState<string | null>(null);
   const m = <K extends keyof typeof f>(k: K) => (v: (typeof f)[K]) => setF({ ...f, [k]: v });
-  const listaAtas = [...atas.values()].sort((a, b) => compararNumeroDoc(a.numero, b.numero));
+  const nomeEmpresa = f.empresaId ? empresas.get(f.empresaId)?.nome : undefined;
+  const listaAtas = useMemo(() => atasParaContrato(atas.values(), f.empresaId, hoje), [atas, f.empresaId, hoje]);
+  const opcoesAta = useMemo<OpcaoBusca[]>(() => {
+    const titulo = { empresa: `Com itens de ${nomeEmpresa ?? 'esta empresa'}`, vigentes: nomeEmpresa ? 'Outras ARPs vigentes' : 'Vigentes', vencidas: 'Vencidas' };
+    return listaAtas.map((o) => ({
+      id: o.ata.id,
+      rotulo: [o.ata.numero, objetoAta(o.ata)].filter(Boolean).join(' · '),
+      sub: [
+        `${o.situacao === 'vigente' ? 'vence em' : 'venceu em'} ${formatarData(o.vencimento)}`,
+        o.itensDaEmpresa > 0 && `${o.itensDaEmpresa} ${o.itensDaEmpresa === 1 ? 'item' : 'itens'} desta empresa`,
+      ].filter(Boolean).join(' · '),
+      grupo: titulo[o.grupo],
+    }));
+  }, [listaAtas, nomeEmpresa]);
+  const ataEscolhida = listaAtas.find((o) => o.ata.id === f.ataId);
+  const avisoAta =
+    ataEscolhida && f.empresaId && ataEscolhida.itensDaEmpresa === 0
+      ? 'A empresa escolhida não é fornecedora de nenhum item desta ARP.'
+      : ataEscolhida?.situacao === 'vencido'
+        ? `ARP vencida em ${formatarData(ataEscolhida.vencimento)}.`
+        : 'Deixe sem ARP para contratos por dispensa ou outra modalidade.';
   const travado = !!contrato && contrato.itens.length > 0;
 
   return (
@@ -123,8 +144,8 @@ export function FormContrato({ contrato, aoFechar, ataInicial }: { contrato?: Co
           <Campo rotulo="Objeto" className="span-todo">
             <Entrada valor={f.objeto} muda={m('objeto')} />
           </Campo>
-          <Campo rotulo="ARP (Ata de Registro de Preços)" className="span2" dica="Deixe sem ARP para contratos por dispensa ou outra modalidade.">
-            <Escolha valor={f.ataId} muda={m('ataId')} vazio="Sem ARP" opcoes={listaAtas.map((a) => [a.id, `${a.numero} · ${objetoAta(a)}`] as [string, string])} />
+          <Campo rotulo="ARP (Ata de Registro de Preços)" className="span2" dica={avisoAta}>
+            <EscolhaBusca valor={f.ataId} muda={m('ataId')} opcoes={opcoesAta} semEscolha="Sem ARP" placeholder="Digite o número ou o objeto…" nomePlural="ARPs" duasLinhas />
           </Campo>
           <Campo rotulo="Início da vigência">
             <EntradaData valor={f.dataInicio} muda={m('dataInicio')} />
@@ -168,18 +189,24 @@ function FormItemContrato({ contrato, item, aoFechar }: { contrato: Contrato; it
   const [qtd, setQtd] = useState(item ? textoQuantidade(item.quantidade) : '');
   const [valor, setValor] = useState(item ? textoValor(item.valorUnitario) : '');
 
-  const opcoes = ata
-    ? ata.itens.flatMap((it) =>
-        it.parcelas
-          .filter((p) => p.empresaId === contrato.empresaId)
-          .map((p) => ({ it, p, saldo: saldoParcela(ata, p, contratos.values(), contrato.id) - contrato.itens.filter((x) => x.parcelaId === p.id && x.id !== item?.id).reduce((s, x) => s + x.quantidade, 0) })),
-      )
-    : [];
-  const escolhida = opcoes.find((o) => o.p.id === parcelaId);
+  const opcoes = useMemo(() => (ata ? parcelasParaItemContrato(ata, contrato, contratos.values(), item?.id) : []), [ata, contrato, contratos, item?.id]);
+  const escolhida = opcoes.find((o) => o.parcela.id === parcelaId);
   const daAta = !!contrato.ataId;
   // Revisão 5: item novo pega o valor da ARP em vigor no início do contrato (considera reequilíbrios).
   const refValor = contrato.dataInicio || hojeISO();
   const valorDaAta = (p: Parcela) => (ata ? valorParcelaEm(ata, p, refValor) : p.valorUnitario);
+  const opcoesBusca: OpcaoBusca[] = opcoes.map(({ item: it, parcela: p, saldo }) => ({
+    id: p.id,
+    rotulo: it.descricao,
+    sub: [
+      it.unidade,
+      p.tipoCota === 'ampla' ? 'ampla' : 'cota ME/EPP',
+      saldo > 0 ? `saldo ${formatarQuantidade(saldo)}` : 'sem saldo',
+      formatarValorUnitario(valorDaAta(p)),
+    ].filter(Boolean).join(' · '),
+    busca: `${it.descricao} ${it.unidade}`,
+    grupo: saldo > 0 ? 'Com saldo na ARP' : 'Sem saldo na ARP',
+  }));
 
   return (
     <ModalForm
@@ -220,20 +247,23 @@ function FormItemContrato({ contrato, item, aoFechar }: { contrato: Contrato; it
             </p>
           )}
           <Campo rotulo={`Item da ARP ${ata?.numero ?? ''}`} className="span-todo">
-            <select className="entrada" value={parcelaId} onChange={(e) => setParcelaId(e.target.value)} disabled={!!item}>
-              <option value="">Escolha…</option>
-              {opcoes.map(({ it, p, saldo }) => (
-                <option key={p.id} value={p.id}>
-                  {it.descricao} · {p.tipoCota === 'ampla' ? 'ampla' : 'cota ME'} · saldo {formatarQuantidade(saldo)} · {formatarValorUnitario(valorDaAta(p))}
-                </option>
-              ))}
-            </select>
+            <EscolhaBusca
+              valor={parcelaId}
+              muda={setParcelaId}
+              opcoes={opcoesBusca}
+              placeholder="Digite parte da descrição do item…"
+              nomePlural="itens"
+              detalheEscolhida={opcoesBusca.find((o) => o.id === parcelaId)?.sub}
+              desabilitado={!!item}
+              autoFocus={!item}
+              duasLinhas
+            />
           </Campo>
           <Campo rotulo="Quantidade contratada" dica={escolhida ? `Saldo disponível na ARP: ${formatarQuantidade(escolhida.saldo)}` : undefined}>
             <EntradaQuantidade valor={qtd} muda={setQtd} />
           </Campo>
           <Campo rotulo="Valor unitário" dica="Vem da ARP. Alterações de preço entram por aditivo.">
-            <div className="calculado">{escolhida ? formatarValorUnitario(item?.parcelaId === escolhida.p.id ? item.valorUnitario : valorDaAta(escolhida.p)) : '-'}</div>
+            <div className="calculado">{escolhida ? formatarValorUnitario(item?.parcelaId === escolhida.parcela.id ? item.valorUnitario : valorDaAta(escolhida.parcela)) : '-'}</div>
           </Campo>
         </div>
       ) : (
