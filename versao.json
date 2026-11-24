@@ -1,10 +1,24 @@
 {
-  "versao": "1.7.0",
-  "data": "2026-11-19",
-  "arquivo": "versoes/Vigencias-1.7.0.html",
-  "sha256": "b0eed29a6f4513e5e5973e18bb3f62618d6aa6f8c783a5f8a2847cb20556ffcc",
-  "tamanho": 760477,
+  "versao": "1.8.0",
+  "data": "2026-11-24",
+  "arquivo": "versoes/Vigencias-1.8.0.html",
+  "sha256": "4f3d4760b8ca40f72e3d43fb74ba3d9ea602cd885749bbad2b4767493fed9162",
+  "tamanho": 768544,
   "notas": [
+    {
+      "versao": "1.8.0",
+      "data": "2026-11-24",
+      "rotulo": "(revisão 9)",
+      "secoes": [
+        {
+          "titulo": "Adicionado",
+          "itens": [
+            "Na aba ARPs, a opção \"Itens em todas as ARPs\" procura um item em todas as ARPs de uma vez, mostrando fornecedor, valor unitário e saldo disponível. Clicar no item abre a ARP já filtrada nele.",
+            "Se a busca de ARPs não encontra nenhuma ARP, mas encontra itens com aquele texto, a tela oferece o botão \"Ver itens\"."
+          ]
+        }
+      ]
+    },
     {
       "versao": "1.7.0",
       "data": "2026-11-19",
