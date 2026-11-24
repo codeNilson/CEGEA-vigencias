@@ -29,20 +29,27 @@ export type Rota =
   | { tela: 'ordens' }
   | { tela: 'empresas' }
   | { tela: 'visor' }
-  | { tela: 'ata'; id: string }
+  | { tela: 'ata'; id: string; buscaItens?: string }
   | { tela: 'contrato'; id: string };
 
 const LISTAS = ['atas', 'contratos', 'ordens', 'empresas', 'visor'] as const;
 
 function lerRota(): Rota {
-  const [, tela, id] = location.hash.replace(/^#/, '').split('/');
-  if ((tela === 'ata' || tela === 'contrato') && id) return { tela, id: decodeURIComponent(id) };
+  const [caminho, consulta = ''] = location.hash.replace(/^#/, '').split('?');
+  const [, tela, id] = caminho.split('/');
+  if (tela === 'ata' && id) {
+    // Revisão 9: a busca de itens em todas as ARPs abre a ARP com a busca de itens preenchida.
+    const buscaItens = new URLSearchParams(consulta).get('itens') ?? '';
+    return buscaItens ? { tela, id: decodeURIComponent(id), buscaItens } : { tela, id: decodeURIComponent(id) };
+  }
+  if (tela === 'contrato' && id) return { tela, id: decodeURIComponent(id) };
   if ((LISTAS as readonly string[]).includes(tela)) return { tela } as Rota;
   return { tela: 'inicio' };
 }
 
 export function hrefDe(r: Rota): string {
   if (r.tela === 'inicio') return '#/';
+  if (r.tela === 'ata' && r.buscaItens) return `#/ata/${encodeURIComponent(r.id)}?${new URLSearchParams({ itens: r.buscaItens })}`;
   if (r.tela === 'ata' || r.tela === 'contrato') return `#/${r.tela}/${encodeURIComponent(r.id)}`;
   return `#/${r.tela}`;
 }

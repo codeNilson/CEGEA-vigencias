@@ -414,3 +414,10 @@ O setor acumula ARPs, contratos, itens e OF/OS. Nenhuma tela pode depender de a 
 - `errata` e `outro` são tipos só de registro (`TIPOS_SO_REGISTRO`, `ehSoRegistro` em `tipos.ts`). Os cálculos usam listas positivas de tipos (prazo; quantidade; valor e reequilíbrio), e `quantidadeVigenteParcela` exclui os dois de forma explícita, então nenhum dado nesses aditivos muda vencimento, período, quantidade ou valor. A validação exige a descrição (`observacoes`) e recusa prazo, quantidades ou valores.
 - Por que "outra alteração" não altera itens: o que cabe nela (troca de modelo, mudança de cláusula, endereço de entrega) não tem regra de cálculo comum. Se a descrição de um item mudar, edita-se o item; quantidade e valor continuam nos tipos próprios.
 - Compatibilidade: só foram acrescentados valores ao `enum` de `tipo`. Arquivos antigos são lidos sem mudança. Uma janela ainda aberta com versão anterior acusa erro de leitura no arquivo que tiver aditivo `errata` ou `outro` até recarregar; gravar ela já não pode, pela regra de `versaoMinima` (seção 10.3).
+
+## 13. Revisão 9: busca de itens em todas as ARPs (24/11/2026)
+
+- Regra pura em `buscarItensAtas` (`src/estado/seletores.ts`): percorre as ARPs na ordem escolhida da lista, aplica o filtro de situação (`passaFiltroDocs`) e, por item, os mesmos critérios de busca de `filtrarItensAta`. O contratado por parcela é somado uma vez por chamada (mapa parcela → quantidade original dos itens de contrato, D02), em vez de varrer os contratos a cada parcela.
+- Tela em `src/ui/telas/BuscaItensAtas.tsx`, aberta pela escolha "Procurar: ARPs | Itens em todas as ARPs" em `ListaDocumentos`. A escolha e os filtros ficam num objeto do módulo (`memoriaBuscaItens`), não no `localStorage`: sobrevivem a abrir uma ARP e voltar, mas recomeçam ao reabrir o sistema.
+- A rota da ARP aceita `#/ata/<id>?itens=<texto>`, que preenche a busca de itens da ficha (e mostra a caixa de busca mesmo com 8 itens ou menos).
+- Nenhuma mudança no formato dos arquivos.

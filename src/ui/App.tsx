@@ -147,7 +147,7 @@ function Sistema() {
         {rota.tela === 'atas' && <ListaDocumentos key="atas" tipo="ata" aoNovo={() => setNovo('ata')} />}
         {rota.tela === 'contratos' && <ListaDocumentos key="contratos" tipo="contrato" aoNovo={() => setNovo('contrato')} />}
         {rota.tela === 'ordens' && <TelaOrdens />}
-        {rota.tela === 'ata' && <AtaTela key={rota.id} id={rota.id} />}
+        {rota.tela === 'ata' && <AtaTela key={rota.id} id={rota.id} buscaInicial={rota.buscaItens} />}
         {rota.tela === 'contrato' && <ContratoTela key={rota.id} id={rota.id} />}
         {rota.tela === 'empresas' && <TelaEmpresas />}
       </main>

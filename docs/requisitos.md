@@ -9,6 +9,7 @@ Revisão 5 (19/11/2026): reequilíbrio na ARP, máscara de valores, ordenação 
 Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas de versão e proteção contra versão antiga aberta.
 Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos. Paginação e filtro por empresa nas listas de ARPs, contratos e OF/OS. Busca, filtros e paginação nas telas da ARP e do contrato. Limite de cartões no Início.
 Revisão 8 (19/11/2026): edição de aditivos da ARP e do contrato. Novos tipos de aditivo "Errata" e "Outra alteração", que só ficam registrados.
+Revisão 9 (24/11/2026): busca de itens em todas as ARPs de uma vez (RF23).
 
 ## 1. Objetivo
 
@@ -268,6 +269,18 @@ O sistema se atualiza a partir das versões publicadas no repositório público 
 - CA22.8: Na primeira abertura de cada computador depois de uma atualização, aparece "O que há de novo" com as notas das versões que ele ainda não tinha visto.
 - CA22.9: Um arquivo do sistema copiado à mão para a pasta de rede também é registrado como versão em uso ao abrir.
 - CA22.10: Na demonstração e fora da pasta de rede, o sistema mostra as versões, mas não instala.
+
+### RF23. Busca de itens em todas as ARPs
+
+Para saber se um item está registrado em alguma ARP sem abrir uma por uma.
+
+- CA23.1: Na aba ARPs, a opção "Procurar: Itens em todas as ARPs" mostra os itens de todas as ARPs que casam com a busca. A busca ignora acentos e maiúsculas e aceita palavras soltas em qualquer ordem. Ela casa com a descrição e a unidade do item (mostra todos os fornecedores dele) ou com o nome do fornecedor (mostra só esse).
+- CA23.2: A lista só aparece com pelo menos 3 letras na busca ou com um fornecedor escolhido no filtro.
+- CA23.3: Filtros: situação da ARP (vigentes, padrão; vencendo em 90 dias; vencidas; todas), fornecedor e "Só com saldo" (marcado por padrão), que esconde fornecedores sem saldo disponível.
+- CA23.4: Cada item mostra a ARP, o objeto, o vencimento, o prazo e a situação da ARP e, por fornecedor: cota, valor unitário em vigor hoje (com reequilíbrio), quantidade registrada, já contratada e saldo disponível, calculados como no RF03.
+- CA23.5: Clicar no item abre a ARP com a busca de itens já preenchida. Ao voltar, a busca continua como estava enquanto o sistema estiver aberto.
+- CA23.6: Na busca de ARPs, quando nenhuma ARP casa com o texto mas há itens que casam, a tela avisa quantos são e oferece o botão "Ver itens".
+- CA23.7: 20 itens por página. Planilha e PDF levam todos os itens filtrados, uma linha por fornecedor na planilha.
 
 ## 5. Requisitos não funcionais
 

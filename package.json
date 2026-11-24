@@ -1,6 +1,6 @@
 {
   "name": "vigencias",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Acompanhamento de vigência de ARPs e contratos da SEINF/Prefeitura de Fortaleza. Arquivo HTML único, sem servidor.",
   "private": true,
   "type": "module",

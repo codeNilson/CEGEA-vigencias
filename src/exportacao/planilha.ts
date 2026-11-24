@@ -21,7 +21,7 @@ import { formatarData } from '../dominio/datas';
 import { formatarQuantidade, centavosParaReais, quantidadeParaNumero, totalCentavos, valorParaReais } from '../dominio/numeros';
 import { dataLimiteOrdem, situacaoOrdem } from '../dominio/prazos';
 import { ROTULO_ADITIVO_ATA, ROTULO_ADITIVO_CONTRATO, ehSoRegistro, ROTULO_SITUACAO_ORDEM, rotuloSituacao, type Ata, type Contrato, type Empresa } from '../dominio/tipos';
-import type { LinhaDoc } from '../estado/seletores';
+import type { ItemEncontrado, LinhaDoc } from '../estado/seletores';
 import { compararNumeroDoc, objetoAta } from '../dominio/texto';
 
 /** Tipos de coluna: datas e valores saem como tipos de planilha, não como texto (design.md 5). */
@@ -102,6 +102,48 @@ export function exportarLista(linhas: LinhaDoc[], titulo: string, hoje: string) 
     'Lista',
   );
   baixar(wb, `${titulo} ${hoje}`);
+}
+
+/** Resultado da busca de itens em todas as ARPs (revisão 9): uma linha por fornecedor do item. */
+export function exportarItensEncontrados(itens: ItemEncontrado[], hoje: string) {
+  const wb = utils.book_new();
+  utils.book_append_sheet(
+    wb,
+    folha(
+      [
+        ['ARP', 'texto', 16],
+        ['Objeto da ARP', 'texto', 40],
+        ['Vencimento da ARP', 'data', 18],
+        ['Situação da ARP', 'texto', 16],
+        ['Item', 'texto', 44],
+        ['Unidade', 'texto'],
+        ['Fornecedor', 'texto', 34],
+        ['Cota', 'texto'],
+        ['Valor unitário (R$)', 'unitario', 18],
+        ['Quantidade registrada', 'qtd', 20],
+        ['Já contratada', 'qtd', 16],
+        ['Saldo disponível', 'qtd', 16],
+      ],
+      itens.flatMap((it) =>
+        it.parcelas.map((p) => [
+          it.ataNumero,
+          it.ataObjeto,
+          data(it.vencimento),
+          rotuloSituacao(it.situacao, 'ata'),
+          it.item.descricao,
+          it.item.unidade,
+          p.empresa,
+          p.parcela.tipoCota === 'ampla' ? 'Ampla' : 'Cota ME/EPP',
+          valorParaReais(p.valor),
+          quantidadeParaNumero(p.registrada),
+          quantidadeParaNumero(p.contratada),
+          quantidadeParaNumero(p.saldo),
+        ]),
+      ),
+    ),
+    'Itens',
+  );
+  baixar(wb, `Itens das ARPs ${hoje}`);
 }
 
 export function exportarAta(ata: Ata, empresas: Map<string, Empresa>, contratos: Contrato[], hoje: string) {

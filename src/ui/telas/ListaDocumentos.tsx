@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { filtrarDocumentos, linhasDocumentos, type FiltroDocs } from '../../estado/seletores';
+import { buscarItensAtas, filtrarDocumentos, linhasDocumentos, MINIMO_BUSCA_ITENS, type FiltroDocs } from '../../estado/seletores';
+import { BuscaItensAtas, EscolhaModo, memoriaBuscaItens, useModoListaAtas } from './BuscaItensAtas';
 import { exportarLista } from '../../exportacao/planilha';
 import { formatarData } from '../../dominio/datas';
 import { CabecalhoImpressao, Escolha, Paginacao, Prazo, Segmentado, Situacao, usePaginacao } from '../componentes/base';
@@ -24,6 +25,7 @@ export function ListaDocumentos({ tipo, aoNovo }: { tipo: 'ata' | 'contrato'; ao
   const [busca, setBusca] = useState('');
   const [empresaId, setEmpresaId] = useState('');
   const [ordem, setOrdem] = usePreferencia<Ordem>(`lista.${tipo}.ordem`, 'vencimento', ORDENS);
+  const [modo, setModo] = useModoListaAtas();
 
   const todas = useMemo(() => linhasDocumentos({ atas, contratos, empresas, hoje }).filter((l) => l.tipo === tipo), [atas, contratos, empresas, hoje, tipo]);
   // Contagens dos botões respeitam os outros filtros, para mostrar o que cada situação vai trazer.
@@ -41,18 +43,37 @@ export function ListaDocumentos({ tipo, aoNovo }: { tipo: 'ata' | 'contrato'; ao
     ['todos', ehAta ? 'Todas' : 'Todos', n('todos')],
   ];
 
-  return (
+  const cabecalho = (planilha: () => void, vazio: boolean) => (
     <>
-      <CabecalhoImpressao titulo={titulo} hoje={hoje} />
       <div className="pagina-titulo">
         <h1>{ehAta ? 'ARPs' : 'Contratos'}</h1>
         <p>{ehAta ? 'Atas de Registro de Preços da SEPOG aderidas' : 'Contratos de materiais e serviços'}</p>
         <div className="acoes">
-          <button className="btn btn-mini" onClick={() => exportarLista(linhas, titulo, hoje)} disabled={!linhas.length}>Planilha</button>
-          <button className="btn btn-mini" onClick={() => window.print()} disabled={!linhas.length}>PDF</button>
+          <button className="btn btn-mini" onClick={planilha} disabled={vazio}>Planilha</button>
+          <button className="btn btn-mini" onClick={() => window.print()} disabled={vazio}>PDF</button>
           <button className="btn btn-primario" onClick={aoNovo}>{ehAta ? '+ Nova ARP' : '+ Novo contrato'}</button>
         </div>
       </div>
+      {ehAta && <EscolhaModo modo={modo} muda={setModo} />}
+    </>
+  );
+
+  if (ehAta && modo === 'itens') return <BuscaItensAtas ordem={ordem} cabecalho={({ planilha, vazio }) => cabecalho(planilha, vazio)} />;
+
+  // Revisão 9: busca sem ARP encontrada, mas com itens que casam, sugere procurar nos itens.
+  const itensQueCasam =
+    ehAta && linhas.length === 0 && busca.trim().length >= MINIMO_BUSCA_ITENS
+      ? buscarItensAtas({ atas, contratos, empresas, hoje }, { busca, filtro: 'todos' }).length
+      : 0;
+  const verItens = () => {
+    memoriaBuscaItens.busca = busca;
+    setModo('itens');
+  };
+
+  return (
+    <>
+      <CabecalhoImpressao titulo={titulo} hoje={hoje} />
+      {cabecalho(() => exportarLista(linhas, titulo, hoje), !linhas.length)}
 
       <div className="filtros">
         <Segmentado<Filtro> valor={filtro} muda={setFiltro} opcoes={opcoes} />
@@ -74,7 +95,15 @@ export function ListaDocumentos({ tipo, aoNovo }: { tipo: 'ata' | 'contrato'; ao
 
       <div className="tabela-caixa">
         {linhas.length === 0 ? (
-          <div className="vazio">Nada encontrado com esses filtros.</div>
+          <div className="vazio">
+            Nada encontrado com esses filtros.
+            {itensQueCasam > 0 && (
+              <p>
+                Mas {itensQueCasam === 1 ? 'há 1 item' : `há ${itensQueCasam} itens`} de ARP com “{busca.trim()}” na descrição.{' '}
+                <button className="btn btn-mini btn-primario" onClick={verItens}>Ver itens</button>
+              </p>
+            )}
+          </div>
         ) : (
           <table className="tabela">
             <thead>
