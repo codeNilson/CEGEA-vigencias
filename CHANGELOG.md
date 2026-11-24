@@ -4,6 +4,10 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ## [Não publicado]
 
+### Adicionado
+- Na aba ARPs, a opção "Itens em todas as ARPs" procura um item em todas as ARPs de uma vez, mostrando fornecedor, valor unitário e saldo disponível. Clicar no item abre a ARP já filtrada nele.
+- Se a busca de ARPs não encontra nenhuma ARP, mas encontra itens com aquele texto, a tela oferece o botão "Ver itens".
+
 ## [1.7.0] - 2026-11-19 (revisão 8)
 
 ### Adicionado

@@ -6,10 +6,12 @@ import {
   diasRestantes,
   faixaPrazo,
   periodoDaData,
+  quantidadeVigenteParcela,
   saldoParcela,
   situacaoAta,
   situacaoContrato,
   valorOrdem,
+  valorParcelaEm,
 } from '../dominio/calculos';
 import { somarDias } from '../dominio/datas';
 import { dataLimiteOrdem, ordemEmAlerta, situacaoOrdem } from '../dominio/prazos';
@@ -218,7 +220,7 @@ export function filtrarLancamento<T>(
 
 export type FiltroDocs = 'vigentes' | 'vencendo' | 'vencidos' | 'encerrados' | 'todos';
 
-export const passaFiltroDocs = (l: LinhaDoc, f: FiltroDocs) =>
+export const passaFiltroDocs = (l: Pick<LinhaDoc, 'situacao' | 'faixa'>, f: FiltroDocs) =>
   f === 'todos' ||
   (f === 'vigentes' && l.situacao === 'vigente') ||
   (f === 'vencendo' && l.faixa !== 'normal') ||
@@ -329,4 +331,80 @@ export function contadores(linhas: LinhaDoc[], ordens: LinhaOrdem[]) {
     ordensAtrasadas: ordens.filter((o) => o.situacao === 'atrasada').length,
     aguardandoEncerramento: linhas.filter((l) => l.aguardandoEncerramento).length,
   };
+}
+
+// ---------- Busca de itens em todas as ARPs (revisão 9) ----------
+
+/** Quantas letras a busca precisa ter antes de listar itens (sem fornecedor escolhido). */
+export const MINIMO_BUSCA_ITENS = 3;
+
+export interface ParcelaEncontrada {
+  parcela: Parcela;
+  empresa: string;
+  /** Valor unitário em vigor hoje, com reequilíbrio da ARP. */
+  valor: number;
+  registrada: number;
+  contratada: number;
+  saldo: number;
+}
+
+export interface ItemEncontrado {
+  ataId: string;
+  ataNumero: string;
+  ataObjeto: string;
+  vencimento: string;
+  dias: number;
+  situacao: Situacao;
+  faixa: FaixaPrazo;
+  item: ItemAta;
+  parcelas: ParcelaEncontrada[];
+}
+
+/**
+ * Itens de todas as ARPs que passam nos filtros. Como na ficha da ARP (CA03.5), a busca casa com a
+ * descrição e a unidade do item (traz todos os fornecedores dele) ou com o nome do fornecedor (traz só esse).
+ * "Só com saldo" esconde fornecedores sem saldo disponível. Ordem: das ARPs (vencimento ou número), depois a do cadastro.
+ */
+export function buscarItensAtas(
+  e: Base,
+  f: { busca: string; empresaId?: string; filtro: FiltroDocs; soComSaldo?: boolean; ordem?: 'vencimento' | 'numero' },
+): ItemEncontrado[] {
+  const busca = f.busca.trim();
+  if (!busca && !f.empresaId) return [];
+  // D02: só a quantidade original dos itens do contrato consome saldo da ARP.
+  const contratado = new Map<string, number>();
+  for (const c of e.contratos.values())
+    for (const it of c.itens) if (it.parcelaId) contratado.set(it.parcelaId, (contratado.get(it.parcelaId) ?? 0) + it.quantidade);
+  const nome = (id: string) => e.empresas.get(id)?.nome ?? '(empresa não encontrada)';
+
+  const atas = [...e.atas.values()].map((a) => {
+    const vencimento = dataFimVigenteAta(a);
+    const dias = diasRestantes(vencimento, e.hoje);
+    const situacao = situacaoAta(a, e.hoje);
+    return { a, vencimento, dias, situacao, faixa: faixaPrazo(dias, situacao) };
+  });
+  atas.sort((x, y) =>
+    f.ordem === 'numero' ? compararNumeroDoc(x.a.numero, y.a.numero) : x.vencimento.localeCompare(y.vencimento) || x.a.numero.localeCompare(y.a.numero),
+  );
+
+  const r: ItemEncontrado[] = [];
+  for (const { a, vencimento, dias, situacao, faixa } of atas) {
+    if (!passaFiltroDocs({ situacao, faixa }, f.filtro)) continue;
+    for (const item of a.itens) {
+      const parcelas: ParcelaEncontrada[] = [];
+      for (const p of item.parcelas) {
+        if (f.empresaId && p.empresaId !== f.empresaId) continue;
+        const empresa = nome(p.empresaId);
+        if (busca && !casaBusca(`${item.descricao} ${item.unidade} ${empresa}`, busca)) continue;
+        const registrada = quantidadeVigenteParcela(a, p);
+        const contratada = contratado.get(p.id) ?? 0;
+        const saldo = registrada - contratada;
+        if (f.soComSaldo && saldo <= 0) continue;
+        parcelas.push({ parcela: p, empresa, valor: valorParcelaEm(a, p, e.hoje), registrada, contratada, saldo });
+      }
+      if (parcelas.length)
+        r.push({ ataId: a.id, ataNumero: a.numero, ataObjeto: objetoAta(a), vencimento, dias, situacao, faixa, item, parcelas });
+    }
+  }
+  return r;
 }

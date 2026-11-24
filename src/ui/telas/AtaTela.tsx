@@ -421,7 +421,7 @@ function FormAditivoAta({ ata: ataTela, aditivo, aoFechar }: { ata: Ata; aditivo
 
 // ---------- Tela ----------
 
-export function AtaTela({ id }: { id: string }) {
+export function AtaTela({ id, buscaInicial = '' }: { id: string; buscaInicial?: string }) {
   const ata = useLoja((e) => e.atas.get(id));
   const empresas = useLoja((e) => e.empresas);
   const contratosMapa = useLoja((e) => e.contratos);
@@ -430,7 +430,7 @@ export function AtaTela({ id }: { id: string }) {
   const [editandoAditivo, setEditandoAditivo] = useState<AditivoAta | null>(null);
   const { pedir, elemento } = useConfirmacao();
   // Revisão 7: busca e filtro por fornecedor nos itens, encerrados recolhidos e paginação. Na impressão, tudo.
-  const [buscaItens, setBuscaItens] = useState('');
+  const [buscaItens, setBuscaItens] = useState(buscaInicial);
   const [fornecedor, setFornecedor] = useState('');
   const [verEncerrados, setVerEncerrados] = useState(false);
   const imprimindo = useImprimindo();
@@ -535,7 +535,7 @@ export function AtaTela({ id }: { id: string }) {
         <span className="linha" />
         {ata.itens.length > 0 && <span className="sub">{ata.itens.length}</span>}
       </div>
-      {ata.itens.length > LIMITE_FILTRO_LANCAMENTO && (
+      {(ata.itens.length > LIMITE_FILTRO_LANCAMENTO || buscaInicial) && (
         <div className="filtros">
           <input className="entrada busca" placeholder="Buscar item ou fornecedor" value={buscaItens} onChange={(e) => setBuscaItens(e.target.value)} />
           <FiltroEmpresa valor={fornecedor} muda={setFornecedor} empresas={empresas} ids={ata.itens.flatMap((it) => it.parcelas.map((p) => p.empresaId))} />

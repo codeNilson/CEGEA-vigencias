@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { novaAta, novaEmpresa, novoContrato } from '../dominio/fabrica';
 import {
   atasParaContrato,
+  buscarItensAtas,
   contratosDaAta,
   filtrarDocumentos,
   filtrarItensAta,
@@ -230,5 +231,55 @@ describe('demonstração grande', () => {
     const todos = (await ler('contratos')) as Contrato[];
     await ler('empresas');
     for (const c of todos) expect(validarContrato(c, todos, mapaAtas, c), c.numero).toEqual([]);
+  });
+});
+
+describe('CA23 busca de itens em todas as ARPs (revisão 9)', () => {
+  const HOJE9 = '2026-11-24';
+  const f1 = novaEmpresa({ id: 'f1', nome: 'Papelaria Ribeira' });
+  const f2 = novaEmpresa({ id: 'f2', nome: 'Mucuripe ME' });
+  const empresas = new Map([[f1.id, f1], [f2.id, f2]]);
+  const parcela = (id: string, empresaId: string, q = 10, v = 2) => ({ id, empresaId, tipoCota: 'ampla' as const, quantidade: Q(q), valorUnitario: V(v) });
+  const vigente = novaAta({
+    id: 'a1', numero: '010/2026', dataFim: '2027-06-01',
+    itens: [
+      { id: 'i1', descricao: 'Cimento CP II', unidade: 'saco', parcelas: [parcela('p1', 'f1'), parcela('p2', 'f2')] },
+      { id: 'i2', descricao: 'Areia média', unidade: 'm³', parcelas: [parcela('p3', 'f1')] },
+    ],
+    aditivos: [{ id: 'ad1', identificacao: '1º', data: '2026-10-01', tipo: 'reequilibrio', novaDataFim: null, quantidades: [], inicioEfeitos: '2026-10-01', valores: [{ parcelaId: 'p1', novoValorUnitario: V(3) }], observacoes: '' }],
+  });
+  const vencida = novaAta({
+    id: 'a2', numero: '002/2025', dataFim: '2026-01-01',
+    itens: [{ id: 'i3', descricao: 'CIMENTO branco', unidade: 'kg', parcelas: [parcela('p4', 'f2')] }],
+  });
+  const contrato = novoContrato({ id: 'c1', ataId: 'a1', empresaId: 'f2', itens: [{ id: 'ci', parcelaId: 'p2', descricao: 'Cimento CP II', unidade: 'saco', quantidade: Q(10), valorUnitario: V(2) }] });
+  const base = { atas: new Map([[vigente.id, vigente], [vencida.id, vencida]]), contratos: new Map([[contrato.id, contrato]]), empresas, hoje: HOJE9 };
+
+  it('CA23.1 busca sem acento em todas as ARPs, por descrição ou fornecedor', () => {
+    const r = buscarItensAtas(base, { busca: 'cimento', filtro: 'todos' });
+    expect(r.map((x) => x.item.id)).toEqual(['i3', 'i1']);
+    expect(buscarItensAtas(base, { busca: 'areia media', filtro: 'todos' }).map((x) => x.item.id)).toEqual(['i2']);
+    const porFornecedor = buscarItensAtas(base, { busca: 'mucuripe', filtro: 'todos' });
+    expect(porFornecedor.flatMap((x) => x.parcelas.map((p) => p.parcela.id))).toEqual(['p4', 'p2']);
+  });
+
+  it('CA23.2 sem busca nem fornecedor não lista nada; fornecedor sozinho lista os itens dele', () => {
+    expect(buscarItensAtas(base, { busca: '  ', filtro: 'todos' })).toEqual([]);
+    expect(buscarItensAtas(base, { busca: '', empresaId: 'f1', filtro: 'todos' }).map((x) => x.item.id)).toEqual(['i1', 'i2']);
+  });
+
+  it('CA23.3 filtro por situação da ARP e "só com saldo"', () => {
+    expect(buscarItensAtas(base, { busca: 'cimento', filtro: 'vigentes' }).map((x) => x.ataId)).toEqual(['a1']);
+    expect(buscarItensAtas(base, { busca: 'cimento', filtro: 'vencidos' }).map((x) => x.ataId)).toEqual(['a2']);
+    const comSaldo = buscarItensAtas(base, { busca: 'cimento cp', filtro: 'vigentes', soComSaldo: true });
+    expect(comSaldo[0].parcelas.map((p) => p.parcela.id)).toEqual(['p1']);
+  });
+
+  it('CA23.4 saldo desconta a quantidade contratada e o valor é o vigente hoje', () => {
+    const [it1] = buscarItensAtas(base, { busca: 'cimento cp', filtro: 'vigentes' });
+    const p1 = it1.parcelas.find((p) => p.parcela.id === 'p1')!;
+    const p2 = it1.parcelas.find((p) => p.parcela.id === 'p2')!;
+    expect(p1.valor).toBe(V(3));
+    expect(p2).toMatchObject({ registrada: Q(10), contratada: Q(10), saldo: 0, valor: V(2) });
   });
 });
