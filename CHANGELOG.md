@@ -4,6 +4,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ## [Não publicado]
 
+## [1.9.0] - 2026-11-25 (revisão 10)
+
 ### Alterado
 - O sistema passou a se chamar SISGEAD (Sistema de Gestão Administrativa). O novo nome aparece no cabeçalho, na aba do navegador e na tela de escolha da pasta de dados.
 
