@@ -4,5 +4,5 @@ export const ORGAO = {
   sigla: 'SEINF',
   setor: 'Célula de Gestão Administrativa',
   sistema: 'SISGEAD',
-  descricao: 'ARPs, contratos e ordens de fornecimento',
+  descricao: 'Sistema de Gestão Administrativa',
 };
