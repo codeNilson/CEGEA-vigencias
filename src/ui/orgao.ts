@@ -3,6 +3,6 @@ export const ORGAO = {
   nome: 'Secretaria Municipal da Infraestrutura',
   sigla: 'SEINF',
   setor: 'Célula de Gestão Administrativa',
-  sistema: 'Vigências',
-  descricao: 'ARPs, contratos e ordens de fornecimento',
+  sistema: 'SISGEAD',
+  descricao: 'Sistema de Gestão Administrativa',
 };
