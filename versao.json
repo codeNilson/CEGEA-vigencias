@@ -1,10 +1,23 @@
 {
-  "versao": "1.8.0",
-  "data": "2026-11-24",
-  "arquivo": "versoes/Vigencias-1.8.0.html",
-  "sha256": "4f3d4760b8ca40f72e3d43fb74ba3d9ea602cd885749bbad2b4767493fed9162",
-  "tamanho": 768544,
+  "versao": "1.9.0",
+  "data": "2026-11-25",
+  "arquivo": "versoes/Vigencias-1.9.0.html",
+  "sha256": "e3bb94ce2d19667b24b8cac4715b6ee98eaf59aad6fbf2cc0caa18c9943d6c20",
+  "tamanho": 769192,
   "notas": [
+    {
+      "versao": "1.9.0",
+      "data": "2026-11-25",
+      "rotulo": "(revisão 10)",
+      "secoes": [
+        {
+          "titulo": "Alterado",
+          "itens": [
+            "O sistema passou a se chamar SISGEAD (Sistema de Gestão Administrativa). O novo nome aparece no cabeçalho, na aba do navegador e na tela de escolha da pasta de dados."
+          ]
+        }
+      ]
+    },
     {
       "versao": "1.8.0",
       "data": "2026-11-24",
