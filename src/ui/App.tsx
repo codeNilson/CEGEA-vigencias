@@ -90,7 +90,7 @@ function Sistema() {
     <>
       <header className="topo nao-imprimir">
         <div className="topo-interno">
-          <Assinatura />
+          <Assinatura linkInicio />
           <nav className="nav">
             {ABAS.map(([t, r]) => (
               <a key={t} href={hrefDe({ tela: t } as Rota)} aria-current={ativa === t ? 'page' : undefined}>

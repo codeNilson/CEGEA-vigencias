@@ -3,6 +3,7 @@ import { concederPermissao, escolherPasta, suportaPasta, type EstadoPastaSalva }
 import type { Repositorio } from '../../armazenamento/repositorio';
 import { repositorioDemonstracao } from '../../estado/demo';
 import { Assinatura } from '../componentes/Assinatura';
+import { ORGAO } from '../orgao';
 
 export function TelaConexao({ salva, aoConectar }: { salva: EstadoPastaSalva; aoConectar: (r: Repositorio) => void }) {
   const [erro, setErro] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export function TelaConexao({ salva, aoConectar }: { salva: EstadoPastaSalva; ao
     <div className="conexao">
       <div className="conexao-cartao">
         <Assinatura comApp={false} />
-        <h1>Vigências</h1>
+        <h1>{ORGAO.sistema}</h1>
         {!suportaPasta() ? (
           <p>Abra este arquivo no Google Chrome. Outros navegadores não conseguem ler a pasta de dados na rede.</p>
         ) : salva.tipo === 'precisa-permissao' ? (
