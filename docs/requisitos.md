@@ -10,6 +10,7 @@ Revisão 6 (19/11/2026): atualização do sistema pelo próprio sistema, notas d
 Revisão 7 (19/11/2026): sistema preparado para muitos registros. Escolha da ARP no contrato e do item da ARP no item do contrato com busca. Busca e filtros nas tabelas de lançamento de OF/OS e de aditivos. Paginação e filtro por empresa nas listas de ARPs, contratos e OF/OS. Busca, filtros e paginação nas telas da ARP e do contrato. Limite de cartões no Início.
 Revisão 8 (19/11/2026): edição de aditivos da ARP e do contrato. Novos tipos de aditivo "Errata" e "Outra alteração", que só ficam registrados.
 Revisão 9 (24/11/2026): busca de itens em todas as ARPs de uma vez (RF23).
+Revisão 10 (25/11/2026): o sistema passa a se chamar SISGEAD.
 
 ## 1. Objetivo
 
